@@ -19,23 +19,6 @@ GET /check         			controllers.OntoPlay.add(conditionJson: String, individual
 #Add ontoplay routes
 ->         /                           ontoplay.Routes
 
-#properties
-GET /properties/class/:className 		controllers.webservices.Properties.getPropertiesByClassName(className: String)
-GET /properties/operators/:propertyUrl controllers.webservices.Operators.getOpertors(propertyUrl: String)
-
-#annotations
-GET /annotationProperties/get/:componentUri controllers.webservices.Annotations.getAnnotationPropertyByUri(componentUri: String)
-
-
-#classes
-GET /class/property/:propertyUri		controllers.webservices.Classes.getClassesByProperty(propertyUri: String)
-
-
-#individuals
-GET /individuals/class/:className controllers.webservices.Individuals.getIndividualsByClassName(className: String)
-POST /individuals/save controllers.webservices.Individuals.addIndividual()
-GET /individuals/update/:individualName controllers.webservices.Individuals.updateIndividual(individualName: String)
-
 # Javascript routing
 GET    /assets/javascripts/routes      controllers.OntoPlay.javascriptRoutes()
 
