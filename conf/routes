@@ -19,9 +19,8 @@ GET /check         			controllers.OntoPlay.add(conditionJson: String, individual
 #Add ontoplay routes
 ->         /                           ontoplay.Routes
 
-# Ontology configuration 
-GET /uploadOntology  controllers.configuration.UploadController.showUploadPage()
-POST /uploadOntology controllers.configuration.UploadController.upload()
+
+
 #Annotations configuration
 GET /annotation/configuration/show controllers.configuration.AnnotationController.showAnnotationCFPage()
 GET /annotation/configuration/getAnnotations controllers.configuration.AnnotationController.getAnnotationForCFPage()
