@@ -1,11 +1,6 @@
 import java.lang.reflect.Method;
 
-import ontoplay.OntologyHelper;
-import controllers.configuration.utils.OntoplayOntologyUtils;
-import ontoplay.models.ontologyReading.jena.JenaOwlReaderConfig;
-import ontoplay.jobs.JenaOwlReaderConfiguration;
-import ontoplay.jobs.OntologyGeneratorConfiguration;
-import ontoplay.jobs.PropertyTypeConfiguration;
+
 import play.*;
 import play.mvc.Action;
 import play.mvc.Http.Request;
@@ -16,11 +11,11 @@ public class Global extends GlobalSettings{
     {
     	//new JenaOwlReaderConfiguration().initialize(TANHelper.file,new JenaOwlReaderConfig().useLocalMapping(TANHelper.iriString,TANHelper.fileName));
     	try {
-    		OntoplayOntologyUtils.setOntologyCF();
-			new PropertyTypeConfiguration().doJob();
+//    		OntoplayOntologyUtils.setOntologyCF();
+	//		new PropertyTypeConfiguration().doJob();
 
-			new JenaOwlReaderConfiguration().initialize(OntologyHelper.file,new JenaOwlReaderConfig().useLocalMapping(OntologyHelper.iriString,OntologyHelper.fileName));
-			new OntologyGeneratorConfiguration().doJob();
+		//	new JenaOwlReaderConfiguration().initialize(OntologyHelper.file,new JenaOwlReaderConfig().useLocalMapping(OntologyHelper.iriString,OntologyHelper.fileName));
+			//new OntologyGeneratorConfiguration().doJob();
 
 			//Logger.info("\n\n\n REGISTERED \n\n");
 		} catch (Exception e) {
@@ -34,8 +29,8 @@ public class Global extends GlobalSettings{
     public Action onRequest(Request arg0, Method arg1) {
     	try {
 
-    		new JenaOwlReaderConfiguration().initialize(OntologyHelper.file,new JenaOwlReaderConfig().useLocalMapping(OntologyHelper.iriString,OntologyHelper.fileName));
-			new OntologyGeneratorConfiguration().doJob();
+    	//	new JenaOwlReaderConfiguration().initialize(OntologyHelper.file,new JenaOwlReaderConfig().useLocalMapping(OntologyHelper.iriString,OntologyHelper.fileName));
+		//	new OntologyGeneratorConfiguration().doJob();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
