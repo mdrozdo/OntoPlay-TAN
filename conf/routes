@@ -19,17 +19,6 @@ GET /check         			controllers.OntoPlay.add(conditionJson: String, individual
 #Add ontoplay routes
 ->         /                           ontoplay.Routes
 
-
-
-#Annotations configuration
-GET /annotation/configuration/show controllers.configuration.AnnotationController.showAnnotationCFPage()
-GET /annotation/configuration/getAnnotations controllers.configuration.AnnotationController.getAnnotationForCFPage()
-GET /annotation/configuration/getComponenets   controllers.configuration.AnnotationController.getOntologyComponents()
-GET /annotation/configuration/getRelations/:annotationIri controllers.configuration.AnnotationController.getRelationsByAnnotationIri(annotationIri: String)
-POST /annotation/configuration/addRelation 							controllers.configuration.AnnotationController.AddRelation()
-POST /annotation/configuration/deleteRelation 							controllers.configuration.AnnotationController.deleteRelation()
-POST /annotation/configuration/deleteAllRelations 							controllers.configuration.AnnotationController.deleteAllRelations()
-
 #properties
 GET /properties/class/:className 		controllers.webservices.Properties.getPropertiesByClassName(className: String)
 GET /properties/operators/:propertyUrl controllers.webservices.Operators.getOpertors(propertyUrl: String)
