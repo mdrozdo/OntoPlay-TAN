@@ -1,4 +1,4 @@
-package ontoplay.controllers.configuration.utils;
+package controllers.configuration.utils;
 
 import java.io.IOException;
 import java.rmi.server.UID;
