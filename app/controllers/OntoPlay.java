@@ -166,30 +166,25 @@ public class OntoPlay extends OntologyController {
 		{ return Results.redirect("/"); }
 	}
 	
-public static Result testAngular(String className){
+public static Result process(String className){
 		
-		return ok(views.html.mainAngular.render(className));
-	}
-
-	public static Result process(String className) {
-
 		try {
-			//new JenaOwlReaderConfiguration().initialize(TANHelper.file,new JenaOwlReaderConfig().useLocalMapping(TANHelper.iriString,TANHelper.fileName));
-			if (className == null)
-				className = "Offer";
-
 			OntoClass owlClass = getOwlClass(className);
 
 			if (owlClass == null) {
 				return ok(views.html.tan.startView.render("Class Not Found"));
 			}
 
-			return ok(views.html.tan.add.render(owlClass));// views.html.tan.add.render(owlClass));
-															// //views.html.tan.add.render(owlClass));
+			return ok(views.html.mainAngular.render(className));
+			
 		} catch (Exception e) {
 			return ok("Can't find the required classs:/n+" + e.toString());
 		}
+		
+		
+		
 	}
+
 
 	public static Result add(String conditionJson, String individualName) {
 		try {
