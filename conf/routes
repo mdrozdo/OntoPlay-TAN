@@ -9,7 +9,7 @@ GET / controllers.Main.index()
 GET /remove/:individualName/:className	 controllers.OntoPlay.remove(individualName: String, className: String)
 GET /individual/:individualName	 controllers.OntoPlay.individual(individualName: String)
 GET /view/:className controllers.OntoPlay.view(className : String)
-GET /test/:className controllers.OntoPlay.testAngular(className: String)
+
 
 GET /sendOffer/:offerURI/:targetURI controllers.OntoPlay.sendOffer(targetURI: String, offerURI: String)
 GET /add/:className			controllers.OntoPlay.process(className: String)
