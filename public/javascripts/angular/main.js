@@ -76,7 +76,16 @@
 				return;
 			}
 			//Services.update(angular.toJson(individual),$scope.individualName);
-			Services.update(angular.toJson(individual),$scope.individualName);
+			Services.update(angular.toJson(individual),$scope.individualName).then(function(data){
+				if(data=="ok"){
+					alert("Individual was added successfully. You will be redirected to the main "+$scope.mainClass+" page");
+					window.location.pathname="/view/"+$scope.mainClass;
+				
+				}else{
+					alert("An error occured please try again later\n"+data)
+				}
+					
+			});
 		}
         
         $scope.$on('addChild', function (event, scope,className) {
