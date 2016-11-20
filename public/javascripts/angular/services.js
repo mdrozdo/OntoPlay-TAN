@@ -16,8 +16,8 @@
         });
 	}
 	
-	var getOperators=function(propertyUri){
-		 return $http.get('/properties/operators/' + propertyUri).then(function(response){
+	var getOperators=function(propertyUri,isDescriptionOfIndividual){
+		 return $http.get('/properties/operators/' + propertyUri+'/'+isDescriptionOfIndividual).then(function(response){
             return response.data;
           
         });
@@ -46,6 +46,12 @@
 		});
 		
 	}
+	
+	var isAddIndividual=function(){
+		if(window.location.pathname.startsWith("/addClassExpression"))
+			return false;
+		return true;
+	}
     
  
     
@@ -55,7 +61,8 @@
 	  getOperators:getOperators,
 	  getClasses:getClasses,
 	  update:updateIndividual,
-	  getAnnotationProperties:getAnnotationProperties
+	  getAnnotationProperties:getAnnotationProperties,
+	  isAddIndividual:isAddIndividual
     };
   }
    var app = angular.module('Ontoplay');
