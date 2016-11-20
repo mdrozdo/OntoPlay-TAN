@@ -30,10 +30,14 @@
         });
 	}
 	
-	var updateIndividual=function(data,individualName){
-	
-		var dataToBeSend={'conditionJson':data,'name':individualName};
-			 return $http.post('/individuals/save', dataToBeSend).then(function(response){
+	var add=function(data,elementName){
+		var url='';
+		if(isAddIndividual())
+			url='/individuals/save';
+		else
+			url="/class/save";
+		var dataToBeSend={'conditionJson':data,'name':elementName};
+			 return $http.post(url, dataToBeSend).then(function(response){
             return response.data;
           
         });
@@ -60,7 +64,7 @@
 	  getProperties:getProperties,
 	  getOperators:getOperators,
 	  getClasses:getClasses,
-	  update:updateIndividual,
+	  add:add,
 	  getAnnotationProperties:getAnnotationProperties,
 	  isAddIndividual:isAddIndividual
     };

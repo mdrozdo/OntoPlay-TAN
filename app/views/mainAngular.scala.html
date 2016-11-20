@@ -97,15 +97,17 @@
       </div>
       </div>
       </script>
+      
+      <div ng-controller="Main"  class="row" ng-init="mainClass='@className'">
       <div class="row">
          <div class="col-sm-18">
-            <h3>Add new individual for @className</h3>
+            <h3>{{title}}</h3>
          </div>
       </div>
-      <div ng-controller="Main"  class="row" ng-init="mainClass='@className'">
-        <div class="form-group">
-						<label for="individualName">Individual name:</label>
-						<input id="individualName" ng-model="individualName" class="form-control" name="individualName" type="text" required="required">
+	  
+		<div class="form-group">
+						<label for="individualName">{{type}} name:</label>
+						<input id="elementName" ng-model="elementName" class="form-control" name="elementName" type="text" required="required">
 		</div>
 		<from class="form-inline">
 		 <div class="col-sm-18">
@@ -120,7 +122,7 @@
          <div class='condition-operator'> <a ng-click=newItem('@className') href='#'><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></a></div>
          <div class='condition-operator'> <a ng-click=showAnnotationFormMainClass('@className')>Describe</a></div>
          
-		 <input ng-disabled="!individualName " class="btn btn-success" ng-click="update()" type="button" value="Update">
+		 <input ng-disabled="!elementName " class="btn btn-success" ng-click="add()" type="button" value="Add">
 		 <pre class="code">{{ data | json }}</pre>
 		 </form>
       </div>
