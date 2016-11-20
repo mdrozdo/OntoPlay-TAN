@@ -15,3 +15,6 @@ dist
 /.settings
 patches
 /bin/
+configuration/uploads/*
+/configuration/uploads/*.owl
+/samples/TAN/*.owl
