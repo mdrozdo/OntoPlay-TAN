@@ -166,24 +166,7 @@ public class OntoPlay extends OntologyController {
 		{ return Results.redirect("/"); }
 	}
 	
-public static Result process(String className){
-		
-		try {
-			OntoClass owlClass = getOwlClass(className);
 
-			if (owlClass == null) {
-				return ok(views.html.tan.startView.render("Class Not Found"));
-			}
-
-			return ok(views.html.mainAngular.render(className));
-			
-		} catch (Exception e) {
-			return ok("Can't find the required classs:/n+" + e.toString());
-		}
-		
-		
-		
-	}
 
 
 	public static Result add(String conditionJson, String individualName) {

@@ -12,8 +12,6 @@ GET /view/:className controllers.OntoPlay.view(className : String)
 
 
 GET /sendOffer/:offerURI/:targetURI controllers.OntoPlay.sendOffer(targetURI: String, offerURI: String)
-GET /add/:className			controllers.OntoPlay.process(className: String)
-GET /addClassExpression/:className			controllers.OntoPlay.process(className: String)
 GET /check         			controllers.OntoPlay.add(conditionJson: String, individualName:String)    
 
 
