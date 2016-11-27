@@ -1,6 +1,6 @@
 import java.lang.reflect.Method;
 
-import ontoplay.OntologyHelper;
+import ontoplay.controllers.utils.OntologyUtils;
 import controllers.configuration.utils.OntoplayOntologyUtils;
 import ontoplay.models.ontologyReading.jena.JenaOwlReaderConfig;
 import ontoplay.jobs.JenaOwlReaderConfiguration;
@@ -19,7 +19,7 @@ public class Global extends GlobalSettings{
     		OntoplayOntologyUtils.setOntologyCF();
 			new PropertyTypeConfiguration().doJob();
 
-			new JenaOwlReaderConfiguration().initialize(OntologyHelper.file,new JenaOwlReaderConfig().useLocalMapping(OntologyHelper.iriString,OntologyHelper.fileName));
+			new JenaOwlReaderConfiguration().initialize(OntologyUtils.file,new JenaOwlReaderConfig().useLocalMapping(OntologyUtils.iriString,OntologyUtils.fileName));
 
 			//Logger.info("\n\n\n REGISTERED \n\n");
 		} catch (Exception e) {
@@ -33,7 +33,7 @@ public class Global extends GlobalSettings{
     public Action onRequest(Request arg0, Method arg1) {
     	try {
 
-    		new JenaOwlReaderConfiguration().initialize(OntologyHelper.file,new JenaOwlReaderConfig().useLocalMapping(OntologyHelper.iriString,OntologyHelper.fileName));
+    		new JenaOwlReaderConfiguration().initialize(OntologyUtils.file,new JenaOwlReaderConfig().useLocalMapping(OntologyUtils.iriString,OntologyUtils.fileName));
 			new OntologyGeneratorConfiguration().doJob();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

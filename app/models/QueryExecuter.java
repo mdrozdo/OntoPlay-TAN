@@ -9,7 +9,7 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.util.FileManager;
 
-import ontoplay.OntologyHelper;
+import ontoplay.controllers.utils.OntologyUtils;
 
 import java.io.InputStream;
 
@@ -24,7 +24,7 @@ public class QueryExecuter {
 	OntModel connect() {
 		OntModel mode = null;
 		mode = ModelFactory.createOntologyModel(PelletReasonerFactory.THE_SPEC);
-		InputStream in = FileManager.get().open(OntologyHelper.file); 
+		InputStream in = FileManager.get().open(OntologyUtils.file); 
 		if (in == null) {
 			throw new IllegalArgumentException("File not found"); 
 		}
