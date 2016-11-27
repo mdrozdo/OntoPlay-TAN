@@ -20,7 +20,6 @@ public class Global extends GlobalSettings{
 			new PropertyTypeConfiguration().doJob();
 
 			new JenaOwlReaderConfiguration().initialize(OntologyHelper.file,new JenaOwlReaderConfig().useLocalMapping(OntologyHelper.iriString,OntologyHelper.fileName));
-			new OntologyGeneratorConfiguration().doJob();
 
 			//Logger.info("\n\n\n REGISTERED \n\n");
 		} catch (Exception e) {
