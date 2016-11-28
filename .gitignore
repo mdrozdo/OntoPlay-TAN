@@ -18,4 +18,5 @@ patches
 configuration/uploads/*
 /configuration/uploads/*.owl
 /samples/TAN/*.owl
-OntoPlay/configuration/
+
+*.owl
