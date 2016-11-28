@@ -20,3 +20,4 @@ configuration/uploads/*
 /samples/TAN/*.owl
 
 *.owl
+*.xml
