@@ -1,5 +1,6 @@
 package ontoplay.jobs;
 
+import ontoplay.controllers.OntologyController;
 import ontoplay.models.ontologyReading.jena.JenaOwlReader;
 import ontoplay.models.ontologyReading.jena.JenaOwlReaderConfig;
 
@@ -20,6 +21,7 @@ public class JenaOwlReaderConfiguration{
 	public void initialize(String uri, JenaOwlReaderConfig jenaOwlReaderConfig) {
 		JenaOwlReader.initialize(uri,
 				jenaOwlReaderConfig);
+		OntologyController.setObjects();
 		
 	}
 }

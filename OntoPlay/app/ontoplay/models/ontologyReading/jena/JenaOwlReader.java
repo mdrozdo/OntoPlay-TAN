@@ -39,9 +39,11 @@ import ontoplay.models.ontologyReading.jena.propertyFactories.StringPropertyFact
 import play.Logger.ALogger;
 
 public class JenaOwlReader extends OntologyReader{
+	private JenaOwlReaderConfig config = null;
 	private OntModel model;
 	private String uri;
 	private boolean ignorePropsWithNoDomain;
+	private String fileUri = null;
 
 	public static void initialize(String uri, JenaOwlReaderConfig config) {
 		setGlobalInstance(loadFromFile(uri, config));
@@ -69,7 +71,7 @@ public class JenaOwlReader extends OntologyReader{
 		
 		model.read(uri);
 
-		return new JenaOwlReader(model, config);
+		return new JenaOwlReader(uri, model, config);
 	}
 
 	public static OntologyReader loadFromFile(String uri) {
@@ -82,11 +84,13 @@ public class JenaOwlReader extends OntologyReader{
 		this.uri = namespace.substring(0, namespace.length() - 1);
 	}
 
-	public JenaOwlReader(OntModel model, JenaOwlReaderConfig config) {
+	public JenaOwlReader(String fileUri, OntModel model, JenaOwlReaderConfig config) {
 		this(model);
+		this.fileUri = fileUri;
 		if (config != null) {
 			ignorePropsWithNoDomain = config.isIgnorePropsWithNoDomain();
 		}
+		this.config = config;
 	}
 
 	/* (non-Javadoc)
@@ -269,4 +273,9 @@ public class JenaOwlReader extends OntologyReader{
 		}
     	return annotations;
 	}
+
+    @Override
+    public void reload() {
+        initialize(fileUri, config);
+    }
 }

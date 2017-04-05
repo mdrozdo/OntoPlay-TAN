@@ -255,5 +255,10 @@ public class OwlApiReader extends OntologyReader {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
+    @Override
+    public void reload() {
+
+    }
+
 }

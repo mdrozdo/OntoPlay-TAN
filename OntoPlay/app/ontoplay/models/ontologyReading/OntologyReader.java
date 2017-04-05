@@ -37,4 +37,5 @@ public abstract class OntologyReader implements PropertyProvider{
 	public abstract OwlIndividual getIndividual(String name);
 	public abstract Set<AnnotationDTO> getAnnotations(boolean isFromNameSpace);
 
+	public abstract void reload();
 }

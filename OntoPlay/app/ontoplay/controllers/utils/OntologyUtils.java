@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import ontoplay.models.ontologyReading.jena.JenaOwlReader;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -70,6 +71,8 @@ public class OntologyUtils {
 				}
 			}
 		}
+		new JenaOwlReaderConfiguration().initialize(OntologyUtils.file,new JenaOwlReaderConfig().useLocalMapping(OntologyUtils.iriString,OntologyUtils.fileName));
+
 		return true;
 	}
 
@@ -124,9 +127,8 @@ public class OntologyUtils {
 
 	public static OntologyReader checkOwlReader() {
 		checkFile = "file:" + PathesUtils.UPLOADS_PATH + "Check" + ontologyName;
-		new JenaOwlReaderConfiguration().initialize(checkFile,
+		return JenaOwlReader.loadFromFile(checkFile,
 				new JenaOwlReaderConfig().useLocalMapping(iriString, checkFileName));
-		return OntologyReader.getGlobalInstance();
 	}
 
 	public static String getComponentIriByName(String name) {
