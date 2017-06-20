@@ -4,26 +4,38 @@ import java.io.UnsupportedEncodingException;
 
 import com.google.gson.GsonBuilder;
 
+import ontoplay.controllers.utils.OntologyUtils;
 import ontoplay.controllers.OntologyController;
 import ontoplay.controllers.PropertyConditionRenderer;
 import ontoplay.models.ConfigurationException;
 import ontoplay.models.angular.OperatorDTO;
 import ontoplay.models.ontologyModel.OntoProperty;
+import ontoplay.models.owlGeneration.PropertyConditionRendererProvider;
 import play.Logger.ALogger;
 import play.mvc.Result;
 
+import javax.inject.Inject;
+
 public class Operators extends OntologyController{
 
-		public static Result getOpertors(String propertyUri,boolean isDescriptionOfIndividual){
+	private final PropertyConditionRendererProvider conditionRendererProvider;
+
+	@Inject
+	public Operators(OntologyUtils ontoHelper, PropertyConditionRendererProvider conditionRendererProvider) {
+		super(ontoHelper);
+		this.conditionRendererProvider = conditionRendererProvider;
+	}
+
+		public Result getOpertors(String propertyUri,boolean isDescriptionOfIndividual){
 			try{
 				propertyUri= java.net.URLDecoder.decode(propertyUri, "UTF-8");
 				ALogger log=play.Logger.of("application");
-			OntoProperty property = ontologyReader.getProperty(propertyUri);
+			OntoProperty property = ontologyUtils.getProperty(propertyUri);
 			log.info("Getting opertor for "+propertyUri+" of the class "+property.getClass());
 		
 			
-			PropertyConditionRenderer conditionRenderer = PropertyConditionRenderer
-					.getRenderer(property.getClass());
+			PropertyConditionRenderer conditionRenderer = conditionRendererProvider
+					.getRenderer(property);
 			
 			OperatorDTO operatorDTO=new OperatorDTO(getInputType(property.getClass()),
 					conditionRenderer.getOperators(isDescriptionOfIndividual));

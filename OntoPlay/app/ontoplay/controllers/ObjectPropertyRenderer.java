@@ -10,11 +10,22 @@ import ontoplay.models.ontologyModel.OntoClass;
 import ontoplay.models.ontologyModel.OntoProperty;
 import ontoplay.models.ontologyReading.OntologyReader;
 import ontoplay.models.ontologyReading.jena.JenaOwlReader;
+import ontoplay.models.properties.OwlObjectProperty;
 
-public class ObjectPropertyRenderer extends PropertyConditionRenderer {
+import javax.inject.Inject;
+
+public class ObjectPropertyRenderer implements PropertyConditionRenderer<OwlObjectProperty> {
+
+	private OntologyReader ontoReader;
+
+	@Inject
+	public ObjectPropertyRenderer(OntologyReader ontoReader){
+
+		this.ontoReader = ontoReader;
+	}
 
 	@Override
-	public void renderProperty(int conditionId, OntoClass owlClass, OntoProperty prop, boolean isDescriptionOfIndividual, 
+	public void renderProperty(int conditionId, OntoClass owlClass, OwlObjectProperty prop, boolean isDescriptionOfIndividual,
 			Renderer renderer) {
 		Map<String, Object> args = new LinkedHashMap<String, Object>();
 		args.put("conditionId", conditionId);
@@ -27,7 +38,7 @@ public class ObjectPropertyRenderer extends PropertyConditionRenderer {
 
 	@Override
 	public void renderOperator(int conditionId, OntoClass owlClass,
-			OntoProperty property, String operator, Renderer renderer) {
+							   OwlObjectProperty property, String operator, Renderer renderer) {
 		if (operator.equals("equalToIndividual")) {
 			renderIndividualValueCondition(conditionId, owlClass, property, operator, renderer);
 		} else if (operator.equals("constrainedBy")) {
@@ -44,7 +55,7 @@ public class ObjectPropertyRenderer extends PropertyConditionRenderer {
 		
 		Map<String, Object> args = new LinkedHashMap<String, Object>();
 		args.put("conditionId", conditionId);
-		args.put("classes", OntologyReader.getGlobalInstance().getClassesInRange(property));
+		args.put("classes", ontoReader.getClassesInRange(property));
 		args.put("isDescriptionOfIndividual", isDescriptionOfIndividual);
 		
 		renderer.renderTemplate("Constraints.constrainedValueCondition", args);
@@ -55,7 +66,7 @@ public class ObjectPropertyRenderer extends PropertyConditionRenderer {
 			Renderer renderer) {
 
 		Map<String, Object> args = new LinkedHashMap<String, Object>();
-		args.put("individuals", OntologyReader.getGlobalInstance().getIndividualsInRange(owlClass, property));
+		args.put("individuals", ontoReader.getIndividualsInRange(owlClass, property));
 		
 		renderer.renderTemplate("Constraints.individualValueCondition", args);
 		

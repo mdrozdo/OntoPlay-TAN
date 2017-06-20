@@ -8,24 +8,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.inject.Inject;
 import javax.xml.xpath.XPathExpressionException;
 
-import org.mindswap.pellet.jena.PelletReasonerFactory;
+import ontoplay.controllers.utils.OntologyUtils;
+import ontoplay.OntoplayConfig;
+import ontoplay.models.ontologyReading.OntologyReader;
+import openllet.jena.PelletReasonerFactory;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.hp.hpl.jena.ontology.DatatypeProperty;
-import com.hp.hpl.jena.ontology.ObjectProperty;
-import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.ontology.OntModel;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.util.FileManager;
-import com.hp.hpl.jena.util.iterator.ExtendedIterator;
+import org.apache.jena.ontology.DatatypeProperty;
+import org.apache.jena.ontology.ObjectProperty;
+import org.apache.jena.ontology.OntClass;
+import org.apache.jena.ontology.OntModel;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.util.FileManager;
+import org.apache.jena.util.iterator.ExtendedIterator;
 
 import ontoplay.controllers.OntologyController;
 import ontoplay.controllers.configuration.utils.OntoplayAnnotationUtils;
-import ontoplay.controllers.utils.OntologyUtils;
-import ontoplay.controllers.utils.PathesUtils;
 import ontoplay.models.angular.AnnotationDTO;
 import ontoplay.models.angular.OwlElementDTO;
 import play.data.DynamicForm;
@@ -38,13 +40,23 @@ import play.mvc.Result;
  *
  */
 public class AnnotationController extends OntologyController {
-	static OntoplayAnnotationUtils ontoplayAnnotationUtils=new OntoplayAnnotationUtils(PathesUtils.Annotation_XML_FILE_PATH);
-	       
-	public static Result showAnnotationCFPage() {
+	private OntoplayAnnotationUtils ontoplayAnnotationUtils;
+	private OntoplayConfig config;
+	private OntologyReader ontologyReader;
+
+	@Inject
+	public AnnotationController(OntologyUtils ontologyUtils, OntologyReader ontologyReader, OntoplayAnnotationUtils ontoplayAnnotationUtils, OntoplayConfig config){
+		super(ontologyUtils);
+		this.ontologyReader = ontologyReader;
+		this.ontoplayAnnotationUtils = ontoplayAnnotationUtils;
+		this.config = config;
+	}
+
+	public Result showAnnotationCFPage() {
 		return ok(ontoplay.views.html.configuration.annotations.render());
 	}
 	
-	public static Result getAnnotationForCFPage(){
+	public Result getAnnotationForCFPage(){
     	
     	Set<AnnotationDTO> annotations=ontologyReader.getAnnotations(true);
 		return ok(new GsonBuilder().create().toJson(annotations));
@@ -54,9 +66,9 @@ public class AnnotationController extends OntologyController {
 	 * @return 
 	 * @return classes, object properties and data properties as JSON object
 	 */	
-	public static Result getOntologyComponents(){
+	public Result getOntologyComponents(){
 		OntModel model = ModelFactory.createOntologyModel(PelletReasonerFactory.THE_SPEC);
-    	FileManager.get().readModel(model,new File(OntologyUtils.fileName).toURI().toString());
+    	FileManager.get().readModel(model,new File(config.getOntologyFileName()).toURI().toString());
     	Map<String,List<OwlElementDTO>> results=new HashMap<String,List<OwlElementDTO>>();
     	
     	ExtendedIterator<OntClass> classes=model.listClasses();
@@ -93,11 +105,11 @@ public class AnnotationController extends OntologyController {
     	return ok(new GsonBuilder().create().toJson(results));
 	}
 	
-	private static boolean isFromTheOntologyNameSpace(String uri){
-		return uri!=null && uri.indexOf(OntologyUtils.nameSpace)!=-1;
+	private boolean isFromTheOntologyNameSpace(String uri){
+		return uri!=null && uri.indexOf(config.getOntologyNamespace())!=-1;
 	}
 	
-	public static Result getRelationsByAnnotationIri(String annotationIri){
+	public Result getRelationsByAnnotationIri(String annotationIri){
 		try {
 			annotationIri= java.net.URLDecoder.decode(annotationIri, "UTF-8");
 			return ok(new GsonBuilder().create().toJson(ontoplayAnnotationUtils.getComponentsByAnnotation(annotationIri)));
@@ -107,7 +119,7 @@ public class AnnotationController extends OntologyController {
 		}
 	}
 	
-	public static Result AddRelation(){
+	public Result AddRelation(){
 		DynamicForm dynamicForm = Form.form().bindFromRequest();
 		String annotationIri=dynamicForm.get("annotationIri");
 		String annotationName=dynamicForm.get("annotationName");
@@ -126,7 +138,7 @@ public class AnnotationController extends OntologyController {
 		
 	}
 	
-	public static Result deleteRelation(){
+	public Result deleteRelation(){
 		DynamicForm dynamicForm = Form.form().bindFromRequest();
 		String annotationId=dynamicForm.get("annotationId");
 		String componentId=dynamicForm.get("componentId");
@@ -143,7 +155,7 @@ public class AnnotationController extends OntologyController {
 		return object;
 	}
 	
-	public static Result deleteAllRelations(){
+	public Result deleteAllRelations(){
 		DynamicForm dynamicForm = Form.form().bindFromRequest();
 		String annotationId=dynamicForm.get("annotationId");
 		try{
@@ -152,11 +164,6 @@ public class AnnotationController extends OntologyController {
 		}catch(Exception e){
 			return badRequest();
 		}
-	}
-	
-	public static List<AnnotationDTO> getAnnotationsByComponentUri(String componentUri) throws XPathExpressionException{
-		
-		return ontoplayAnnotationUtils.getAnnotationForComponentByComponentUri(componentUri);
 	}
 
 }

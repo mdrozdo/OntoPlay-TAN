@@ -2,6 +2,8 @@ package ontoplay.models.owlGeneration;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.google.inject.assistedinject.Assisted;
 import ontoplay.models.ClassCondition;
 import ontoplay.models.ConfigurationException;
 import ontoplay.models.PropertyValueCondition;
@@ -15,13 +17,17 @@ import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDeclarationAxiom;
 import org.semanticweb.owlapi.model.OWLIndividual;
-import org.semanticweb.owlapi.model.OWLObjectProperty;
+
+import javax.inject.Inject;
 
 public class IndividualGenerator{
-	
+
+	private RestrictionFactoryProvider restrictionFactoryProvider;
 	private final OWLDataFactory factory;
 
-	public IndividualGenerator(OWLDataFactory factory){
+	@Inject
+	public IndividualGenerator(RestrictionFactoryProvider restrictionFactoryProvider, @Assisted OWLDataFactory factory){
+		this.restrictionFactoryProvider = restrictionFactoryProvider;
 		this.factory = factory;
 	}
 	
@@ -56,18 +62,19 @@ public class IndividualGenerator{
 		
 		//properies axioms
 		for (PropertyValueCondition cond : condition.getPropertyConditions()) {
-			RestrictionFactory restrictionFactory = RestrictionFactory.getRestrictionFactory(cond);
+			RestrictionFactory restrictionFactory = restrictionFactoryProvider.getRestrictionFactory(cond);
 			List<OWLAxiom> propertyAxioms = restrictionFactory.createIndividualValue(cond, individual);
 			individualAxioms.addAll(propertyAxioms);
 		}
 		for(Annotation ann:condition.getAnnotations()){
 		OWLAnnotationProperty owlAnnotationProperty = factory.getOWLAnnotationProperty(IRI.create(ann.getUri()));
 		OWLAxiom annotationAxiom;
-		if(!individual.isAnonymous())
-		 annotationAxiom=factory.getOWLAnnotationAssertionAxiom(owlAnnotationProperty, individual.asOWLNamedIndividual().getIRI(), factory.getOWLLiteral(ann.getValue()));
-		else
-				 annotationAxiom=factory.getOWLAnnotationAssertionAxiom(owlAnnotationProperty, individual.asOWLAnonymousIndividual(), factory.getOWLLiteral(ann.getValue()));
-		individualAxioms.add(annotationAxiom);
+		if(!individual.isAnonymous()){
+			annotationAxiom=factory.getOWLAnnotationAssertionAxiom(owlAnnotationProperty, individual.asOWLNamedIndividual().getIRI(), factory.getOWLLiteral(ann.getValue()));
+		}else{
+			annotationAxiom=factory.getOWLAnnotationAssertionAxiom(owlAnnotationProperty, individual.asOWLAnonymousIndividual(), factory.getOWLLiteral(ann.getValue()));
+		}
+			individualAxioms.add(annotationAxiom);
 		
 		}
 		

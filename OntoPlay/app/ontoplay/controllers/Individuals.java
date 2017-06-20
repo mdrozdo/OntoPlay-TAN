@@ -3,36 +3,35 @@ package ontoplay.controllers;
 import java.util.Map;
 
 import ontoplay.controllers.utils.OntologyUtils;
-import ontoplay.jobs.JenaOwlReaderConfiguration;
 import ontoplay.models.ConfigurationException;
 import ontoplay.models.ontologyModel.OntoClass;
 import ontoplay.models.ontologyModel.OntoProperty;
-import ontoplay.models.ontologyReading.jena.JenaOwlReaderConfig;
+import ontoplay.models.owlGeneration.PropertyConditionRendererProvider;
 import play.mvc.*;
+
+import javax.inject.Inject;
 
 public class Individuals extends OntologyController {
 
 	private static int maxConditionId = 1;
+	private PropertyConditionRendererProvider conditionRendererProvider;
 
-	//TODO: Is this method used?
-	// public static void individual(int conditionId, String classUri) {
-	// 	OntoClass owlClass = getOntologyReader().getOwlClass(classUri);
-	// 	maxConditionId++;
-	// 	int newConditionId = maxConditionId;
-	// 	//TODO: render(newConditionId, owlClass);
-	// }
+	@Inject
+	public Individuals(OntologyUtils ontologyUtils, PropertyConditionRendererProvider conditionRendererProvider){
+		super(ontologyUtils);
+		this.conditionRendererProvider = conditionRendererProvider;
+	}
 
-	public static Result getPropertyCondition(int conditionId, String classUri,
+	public Result getPropertyCondition(int conditionId, String classUri,
 			String propertyUri) throws ConfigurationException {
-		new JenaOwlReaderConfiguration().initialize(OntologyUtils.file,new JenaOwlReaderConfig().useLocalMapping(OntologyUtils.iriString,OntologyUtils.fileName));
-		OntoClass owlClass = ontologyReader.getOwlClass(classUri);
-		
-		
-		OntoProperty property = ontologyReader.getProperty(propertyUri);
+
+		OntoClass owlClass = ontologyUtils.getOwlClass(classUri);
+
+		OntoProperty property = ontologyUtils.getProperty(propertyUri);
 		
 		//from here I can know the property type (data,object,string ,date);
-		PropertyConditionRenderer conditionRenderer = PropertyConditionRenderer
-				.getRenderer(property.getClass());
+		PropertyConditionRenderer conditionRenderer = conditionRendererProvider
+				.getRenderer(property);
 		
 		
 		final HtmlHolder holder = new HtmlHolder();
@@ -47,28 +46,4 @@ public class Individuals extends OntologyController {
 				});
 		return ok(holder.value);
 	}
-
-	//TODO: Is this method used?
-// 	public static void getValueCondition(int conditionId, String classUri,
-// 			String propertyUri, String operator) throws ConfigurationException {
-// 		OntoClass owlClass = getOntologyReader().getOwlClass(classUri);
-// 		OntoProperty property = getOntologyReader().getProperty(propertyUri);
-		
-// 		PropertyConditionRenderer conditionRenderer = PropertyConditionRenderer
-// 				.getRenderer(property.getClass());
-		
-// 		conditionRenderer.renderOperator(conditionId, owlClass, property, operator, 
-// 				new Renderer() {
-
-// 					public void renderTemplate(String templateName,
-// 							Map<String, Object> args) {
-// 						//TODO: Individuals.renderTemplate(templateName, args);
-
-// 					}
-// 				});
-
-
-// //		renderText(String.format("%d; %s; %s; %s", conditionId, classUri,
-// //				propertyUri, operator));
-// 	}
 }

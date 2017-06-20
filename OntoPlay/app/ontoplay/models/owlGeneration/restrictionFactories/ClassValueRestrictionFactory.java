@@ -7,9 +7,7 @@ import java.util.Set;
 
 import ontoplay.models.ConfigurationException;
 import ontoplay.models.angular.update.Annotation;
-import ontoplay.models.owlGeneration.IndividualGenerator;
-import ontoplay.models.owlGeneration.RestrictionFactory;
-import ontoplay.models.owlGeneration.ClassRestrictionGenerator;
+import ontoplay.models.owlGeneration.*;
 import ontoplay.models.propertyConditions.ClassValueCondition;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotation;
@@ -22,17 +20,20 @@ import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 
+import javax.inject.Inject;
 
-public class ClassValueRestrictionFactory extends RestrictionFactory<ClassValueCondition> {
+
+public class ClassValueRestrictionFactory implements RestrictionFactory<ClassValueCondition> {
 	private final OWLDataFactory factory;
 	private final ClassRestrictionGenerator classRestrictionGenerator;
 	private final IndividualGenerator individualGenerator;
 	
 	//TODO: Extract some small interface from OWLApiKB just for generating class restrictions
-	public ClassValueRestrictionFactory(ClassRestrictionGenerator classRestrictionGenerator, IndividualGenerator individualGenerator, 
-			OWLDataFactory factory) {
-		this.classRestrictionGenerator = classRestrictionGenerator;
-		this.individualGenerator = individualGenerator;
+	@Inject
+	public ClassValueRestrictionFactory(ClassRestrictionGeneratorFactory classRestrictionGeneratorFactory, IndividualGeneratorFactory individualGeneratorFactory,
+										OWLDataFactory factory) {
+		this.classRestrictionGenerator = classRestrictionGeneratorFactory.create(factory);
+		this.individualGenerator = individualGeneratorFactory.create(factory);
 		this.factory = factory;
 	}
 	
@@ -55,7 +56,6 @@ public class ClassValueRestrictionFactory extends RestrictionFactory<ClassValueC
 		ArrayList<OWLAxiom> result = new ArrayList<OWLAxiom>();
 		result.addAll(nestedAxioms);
 		result.add(assertion);
-		System.out.println("Hello1");
 		List<Annotation> tempAnnotations=condition.getAnnotations();
 		Set<OWLAnnotation> annotations = new HashSet<>();
        for(Annotation condtionAnnotation:tempAnnotations){
@@ -63,7 +63,7 @@ public class ClassValueRestrictionFactory extends RestrictionFactory<ClassValueC
 					.getOWLAnnotationProperty(IRI.create(condtionAnnotation.getUri()));
 
 			annotations.add(factory.getOWLAnnotation(owlAnnotationProperty,
-					factory.getOWLLiteral(condtionAnnotation.getValue())));    	   
+					factory.getOWLLiteral(condtionAnnotation.getValue())));
        }
        
 		if (annotations.size() != 0) {

@@ -1,138 +1,207 @@
 package ontoplay.controllers.utils;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
-import ontoplay.models.ontologyReading.jena.JenaOwlReader;
-import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyCreationException;
-import org.semanticweb.owlapi.model.OWLOntologyManager;
-import org.semanticweb.owlapi.model.OWLOntologyStorageException;
-
-import jadeOWL.base.OntologyManager;
-import ontoplay.jobs.JenaOwlReaderConfiguration;
+import ontoplay.OntoplayConfig;
+import ontoplay.models.ConfigurationException;
+import ontoplay.models.ontologyModel.OntoClass;
+import ontoplay.models.ontologyModel.OntoProperty;
 import ontoplay.models.ontologyReading.OntologyReader;
-import ontoplay.models.ontologyReading.jena.JenaOwlReaderConfig;
+import ontoplay.models.ontologyReading.OntologyReaderFactory;
+import ontoplay.models.ontologyReading.jena.FolderMapping;
+import org.apache.commons.io.FileUtils;
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.*;
+
+import uk.ac.manchester.cs.owl.owlapi.OWLOntologyIRIMapperImpl;
+
+import javax.inject.Inject;
 
 public class OntologyUtils {
 
-	public static String ontologyName = "";
+	private final OWLOntologyManager owlManager;
+	private OntoplayConfig config;
+	private OntologyReader ontoReader;
+	private OntologyReaderFactory ontoReaderFactory;
 
-	public static String file = "file:" + PathesUtils.UPLOADS_PATH + ontologyName;
+	@Inject
+	public OntologyUtils(OntoplayConfig config,
+		OntologyReader ontoReader,
+		OntologyReaderFactory ontoReaderFactory) {
+		this.config = config;
+		this.ontoReader = ontoReader;
+		this.ontoReaderFactory = ontoReaderFactory;
+		this.owlManager = OWLManager.createOWLOntologyManager();
+	}
 
-	public static String fileName = PathesUtils.UPLOADS_PATH + ontologyName;
+	public OntologyReader checkOwlReader() {
+		String ontologyNamespace = ontoReader.getOntologyNamespace();
+		String checkFilePath = config.getCheckFilePath();
+		List<FolderMapping> mappings = Arrays.asList(new FolderMapping(ontologyNamespace, checkFilePath));
 
-	public static String checkFile = "file:" + PathesUtils.UPLOADS_PATH + "Check" + ontologyName;
+		return ontoReaderFactory.create(checkFilePath, mappings, false);
+	}
 
-	public static String checkFileName = PathesUtils.UPLOADS_PATH + "Check" + ontologyName;
+	public OntoClass getOwlClass(String classUri) {
+		return ontoReader.getOwlClass(classUri);
+	}
 
-	public static String nameSpace = "";
+	public OntoProperty getProperty(String propertyUri) throws ConfigurationException {
+		return ontoReader.getProperty(propertyUri);
+	}
 
-	public static String iriString = "";
+	public String joinNamespaceAndName(String namespace, String name){
+		return String.format("%s#%s", namespace, name);
+	}
 
-	public static boolean saveOntology(OWLOntology generatedOntology) {
-		OWLOntologyManager OWLmanager = OWLManager.createOWLOntologyManager();
+	public boolean saveOntology(OWLOntology generatedOntology) {
+		OWLOntologyManager owlManager = OWLManager.createOWLOntologyManager();
 		OWLOntology originalOntology = null;
 
 		try {
-			originalOntology = OWLmanager.loadOntologyFromOntologyDocument(new File(fileName));
+			OWLOntologyIRIMapperImpl iriMapper = new OWLOntologyIRIMapperImpl();
+			for (FolderMapping mapping : config.getMappings()) {
+				iriMapper.addMapping(IRI.create(mapping.getUri()), IRI.create(mapping.getFolderPath()));
+			}
+			owlManager.addIRIMapper(iriMapper);
+
+			originalOntology = owlManager.loadOntologyFromOntologyDocument(new File(config.getOntologyFilePath()));
+
 		} catch (OWLOntologyCreationException e1) {
-			System.out.print("Error at OntologyHelper.saveOntology 47" + e1.getMessage());
+			System.out.print("Error at OntologyUtils.saveOntology 47" + e1.getMessage());
+			e1.printStackTrace();
 		}
 
-		OntologyManager manager = new OntologyManager();
-		IRI test = IRI.create(iriString);
 		OWLOntology newOntology = null;
 
 		try {
-			newOntology = manager.mergeOntologies(test, originalOntology, generatedOntology);
+			newOntology = mergeOntologies(generatedOntology.getOntologyID().getOntologyIRI().orElse(null), originalOntology, generatedOntology);
 		} catch (org.semanticweb.owlapi.model.OWLOntologyCreationException | OWLOntologyStorageException
 				| IOException e) {
-			System.out.print("Error at OntologyHelper.saveOntology 58 " + e.getMessage());
+			System.out.print("Error at OntologyUtils.saveOntology 58 " + e.getMessage());
+			e.printStackTrace();
 		}
 
 		OutputStream out = null;
 		try {
-			out = new FileOutputStream(fileName);
-			OWLmanager.saveOntology(newOntology, out);
+			OWLDocumentFormat originalFormat = owlManager.getOntologyFormat(originalOntology);
+			out = new FileOutputStream(config.getOntologyFilePath());
+			owlManager.saveOntology(newOntology, originalFormat, out);
 		} catch (Exception e) {
-			System.out.print("Error at OntologyHelper.saveOntology 66" + e.getMessage());
+			System.out.print("Error at OntologyUtils.saveOntology 66" + e.getMessage());
+			e.printStackTrace();
 		} finally {
 			if (out != null) {
 				try {
 					out.close();
 				} catch (Exception e) {
-					System.out.print("Error at OntologyHelper.saveOntology 73" + e.getMessage());
+					System.out.print("Error at OntologyUtils.saveOntology 73" + e.getMessage());
 				}
 			}
 		}
-		new JenaOwlReaderConfiguration().initialize(OntologyUtils.file,new JenaOwlReaderConfig().useLocalMapping(OntologyUtils.iriString,OntologyUtils.fileName));
-
 		return true;
 	}
 
-	public static boolean checkOntology(OWLOntology generatedOntology) {
+
+	public boolean checkOntology(OWLOntology generatedOntology) {
 		try {
 			OWLOntologyManager OWLmanager = OWLManager.createOWLOntologyManager();
 			OWLOntology originalOntology = null;
+
+			String filePath = config.getOntologyFilePath();
+			String ontologyNamespace = ontoReader.getOntologyNamespace();
+
 			try {
-				originalOntology = OWLmanager.loadOntologyFromOntologyDocument(new File(fileName));
+				originalOntology = OWLmanager.loadOntologyFromOntologyDocument(new File(filePath));
 			} catch (OWLOntologyCreationException e1) {
-				System.out.print("Error at OntologyHelper.checkOntology 83" + e1.getMessage());
+				// TODO Auto-generated catch block
 				return false;
 			}
 
-			OntologyManager manager = new OntologyManager();
-			IRI test = IRI.create(iriString);
+			IRI test = IRI.create(ontologyNamespace);
 			OWLOntology newOntology = null;
 			try {
-				newOntology = manager.mergeOntologies(test, originalOntology, generatedOntology);
-			} catch (org.semanticweb.owlapi.model.OWLOntologyCreationException | OWLOntologyStorageException
-					| IOException e) {
-				System.out.print("Error at OntologyHelper.checkOntology 94" + e.getMessage());
+				newOntology = mergeOntologies(test, originalOntology,generatedOntology);
+			} catch (org.semanticweb.owlapi.model.OWLOntologyCreationException
+					| OWLOntologyStorageException | IOException e) {
+				// TODO Auto-generated catch block
 				return false;
 			}
-			checkFileName = PathesUtils.UPLOADS_PATH + "Check" + ontologyName;
-			OutputStream out = null;
-			try {
-				out = new FileOutputStream(checkFileName);
-				OWLmanager.saveOntology(newOntology, out);
 
-			} catch (FileNotFoundException e) {
-				System.out.print("Error at OntologyHelper.checkOntology 104" + e.getMessage());
-				return false;
-			} catch (OWLOntologyStorageException e) {
-				System.out.print("Error at OntologyHelper.checkOntology 107" + e.getMessage());
-				return false;
-			} finally {
+			String checkFilePath = config.getCheckFilePath();
+
+			try {
+				OutputStream out = new FileOutputStream(checkFilePath);
+				//out.write(5);
+				OWLmanager.saveOntology(newOntology, out);
 				try {
-					if (out != null) {
-						out.close();
-					}
+					out.close();
 				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 					return false;
 				}
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				return false;
+			} catch (OWLOntologyStorageException e) {
+				// TODO Auto-generated catch block
+				return false;
 			}
 			return true;
 		} catch (Exception e) {
-			System.out.print("Error at OntologyHelper.checkOntology 120" + e.getMessage());
 			return false;
 		}
 	}
 
-	public static OntologyReader checkOwlReader() {
-		checkFile = "file:" + PathesUtils.UPLOADS_PATH + "Check" + ontologyName;
-		return JenaOwlReader.loadFromFile(checkFile,
-				new JenaOwlReaderConfig().useLocalMapping(iriString, checkFileName));
+
+	public String nameToUri(String name, String ontologyNamespace) {
+		if (name.contains("#")) {
+			return name;
+		} else {
+			return joinNamespaceAndName(ontologyNamespace,name);
+		}
 	}
 
-	public static String getComponentIriByName(String name) {
-		return nameSpace + name;
+	/**
+	 * Merges two or more ontologies into one and saves it with a specified iri
+	 * @param mergedOntologyIRI
+	 * @param ontologies
+	 * @return
+	 * @throws OWLOntologyCreationException
+	 * @throws OWLOntologyStorageException
+	 * @throws IOException
+	 */
+	public OWLOntology mergeOntologies(IRI mergedOntologyIRI, OWLOntology ... ontologies) throws OWLOntologyCreationException, OWLOntologyStorageException, IOException {
+		if (ontologies.length < 2)
+			throw new IllegalArgumentException("There were not enough ontologies to be merged." +
+					"Please, give at least 2 ontologies as parameters");
+		//NEW CODE
+		OWLOntology mergedOntology = owlManager.createOntology(mergedOntologyIRI);
+		for (OWLOntology ontology : ontologies) {
+			owlManager.addAxioms(mergedOntology, ontology.getAxioms());
+			Set<OWLOntology> imports = ontology.getImports();
+			for (Iterator<OWLOntology> it = imports.iterator(); it.hasNext(); ) {
+				OWLOntology onto = it.next();
+				addImportToOntology(mergedOntology, onto.getOntologyID().getOntologyIRI().orElse(null));
+			}
+		}
+		return mergedOntology;
+	}
+
+	public boolean addImportToOntology(OWLOntology ontology, IRI importIRI) {
+		if(importIRI == null) {
+			return false;
+		} else {
+			OWLImportsDeclaration imports = owlManager.getOWLDataFactory().getOWLImportsDeclaration(importIRI);
+			AddImport addImport = new AddImport(ontology, imports);
+			owlManager.applyChange(addImport);
+			return true;
+		}
 	}
 
 }

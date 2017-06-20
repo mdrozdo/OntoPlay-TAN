@@ -1,20 +1,29 @@
 package ontoplay.controllers;
 
-import java.util.Map;
-
+import ontoplay.controllers.utils.OntologyUtils;
 import ontoplay.models.ConfigurationException;
 import ontoplay.models.ontologyModel.OntoClass;
 import ontoplay.models.ontologyModel.OntoProperty;
-import play.Routes;
-import play.mvc.*;
-
+import ontoplay.models.owlGeneration.PropertyConditionRendererProvider;
 import ontoplay.views.html.*;
+import play.Routes;
+import play.mvc.Result;
+
+import javax.inject.Inject;
+import java.util.Map;
 
 public class Constraints extends OntologyController {
 
 	private static int maxConditionId = 1;
+	private PropertyConditionRendererProvider conditionRendererProvider;
 
-    public static Result javascriptRoutes()
+	@Inject
+	public Constraints(OntologyUtils ontologyUtils, PropertyConditionRendererProvider conditionRendererProvider){
+		super(ontologyUtils);
+		this.conditionRendererProvider = conditionRendererProvider;
+	}
+
+    public Result javascriptRoutes()
     {
         response().setContentType("text/javascript");
         return ok(
@@ -32,29 +41,29 @@ public class Constraints extends OntologyController {
         ));
     }
 
-	public static Result condition(int conditionId, String classUri) {
-		OntoClass owlClass = ontologyReader.getOwlClass(classUri);
+	public Result condition(int conditionId, String classUri) {
+		OntoClass owlClass = ontologyUtils.getOwlClass(classUri);
 		maxConditionId++;
 		int newConditionId = maxConditionId;
 		return ok(condition.render( owlClass, ""+newConditionId));
 	}
 	
-	public static Result individual(int conditionId, String classUri) {
-		OntoClass owlClass = ontologyReader.getOwlClass(classUri);
+	public Result individual(int conditionId, String classUri) {
+		OntoClass owlClass = ontologyUtils.getOwlClass(classUri);
 		maxConditionId++;
         int newConditionId = maxConditionId;
         return ok(individual.render( owlClass, ""+newConditionId));
         
 	}
 
-   public static Result getPropertyCondition(int conditionId, String classUri,
+   public Result getPropertyCondition(int conditionId, String classUri,
 			String propertyUri) throws ConfigurationException {
 		
-		OntoClass owlClass = ontologyReader.getOwlClass(classUri);
-		OntoProperty property = ontologyReader.getProperty(propertyUri);
+		OntoClass owlClass = ontologyUtils.getOwlClass(classUri);
+		OntoProperty property = ontologyUtils.getProperty(propertyUri);
 		
-		PropertyConditionRenderer conditionRenderer = PropertyConditionRenderer
-				.getRenderer(property.getClass());
+		PropertyConditionRenderer conditionRenderer = conditionRendererProvider
+				.getRenderer(property);
 		
 		final HtmlHolder holder = new HtmlHolder();
 		
@@ -70,15 +79,14 @@ public class Constraints extends OntologyController {
 		return ok(holder.value);
 	}
 
-	public static Result getValueCondition(int conditionId, String classUri,
+	public Result getValueCondition(int conditionId, String classUri,
 			String propertyUri, String operator) throws ConfigurationException {
 		
-		OntoClass owlClass = ontologyReader.getOwlClass(classUri);
+		OntoClass owlClass = ontologyUtils.getOwlClass(classUri);
 	
-		OntoProperty property = ontologyReader.getProperty(propertyUri);
+		OntoProperty property = ontologyUtils.getProperty(propertyUri);
 		
-		PropertyConditionRenderer conditionRenderer = PropertyConditionRenderer
-				.getRenderer(property.getClass());
+		PropertyConditionRenderer conditionRenderer = conditionRendererProvider.getRenderer(property);
 		
 		final HtmlHolder holder = new HtmlHolder();
 		

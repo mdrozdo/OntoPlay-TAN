@@ -3,6 +3,8 @@ package ontoplay.controllers.webservices;
 import java.util.ArrayList;
 import java.util.List;
 
+import ontoplay.controllers.utils.OntologyUtils;
+import ontoplay.models.owlGeneration.OntologyGenerator;
 import org.semanticweb.owlapi.model.OWLOntology;
 
 import com.google.gson.GsonBuilder;
@@ -20,23 +22,49 @@ import play.data.DynamicForm;
 import play.data.Form;
 import play.mvc.Result;
 
+import javax.inject.Inject;
+
 public class Classes extends OntologyController{
-	public static Result getClassesByProperty(String propertyUri){
+
+	private OntologyReader ontologyReader;
+	private OntologyGenerator ontologyGenerator;
+	private OntologyUtils utils;
+
+	@Inject
+	public Classes(OntologyUtils ontologyUtils, OntologyReader ontologyReader, OntologyGenerator ontologyGenerator, OntologyUtils utils){
+		super(ontologyUtils);
+		this.ontologyReader = ontologyReader;
+		this.ontologyGenerator = ontologyGenerator;
+		this.utils = utils;
+	}
+
+	public Result getClassesByProperty(String propertyUri){
 		try{
 	
-		OntoProperty property = ontologyReader.getProperty(propertyUri);
-		List<OntoClass> classes=ontologyReader.getClassesInRange(property);
-		List<ClassDTO> classesDTO=new ArrayList<ClassDTO>();
-		for (OntoClass owlClass : classes) {
-			classesDTO.add(new ClassDTO(owlClass));			
-		}
-		return ok(new GsonBuilder().create().toJson(classesDTO));
+			OntoProperty property = ontologyReader.getProperty(propertyUri);
+			List<OntoClass> classes=ontologyReader.getClassesInRange(property);
+			List<ClassDTO> classesDTO=new ArrayList<ClassDTO>();
+			for (OntoClass owlClass : classes) {
+				classesDTO.add(new ClassDTO(owlClass));
+			}
+
+			return ok(new GsonBuilder().create().toJson(classesDTO));
 		}catch(ConfigurationException e){
 			return badRequest();
 		}
-		}
+	}
+
+	public Result getClasses(){
+		List<OntoClass> classes=ontologyReader.getClasses();
+		List<ClassDTO> classesDTO=new ArrayList<ClassDTO>();
+		for (OntoClass owlClass : classes) {
+            classesDTO.add(new ClassDTO(owlClass));
+        }
+
+		return ok(new GsonBuilder().create().toJson(classesDTO));
+	}
 	
-	public static Result addClassExpression() {
+	public Result addClassExpression() {
 		@SuppressWarnings("deprecation")
 		DynamicForm dynamicForm = Form.form().bindFromRequest();
 		String conditionJson = dynamicForm.get("conditionJson");
@@ -44,12 +72,12 @@ public class Classes extends OntologyController{
 		try {
 		ClassCondition condition = ConditionDeserializer.deserializeCondition(ontologyReader, conditionJson);
 		OWLOntology generatedOntology=
-				ontologyGenerator.convertToOwlClassOntology(OntologyUtils.nameSpace +classExpressionName, condition);
+				ontologyGenerator.convertToOwlClassOntology(utils.joinNamespaceAndName(ontologyReader.getOntologyNamespace(), classExpressionName), condition);
 			if (generatedOntology == null)
 				return ok("Ontology is null");
-			OntologyUtils.checkOntology(generatedOntology);
-			OntologyReader checkOntologyReader = OntologyUtils.checkOwlReader();
-			OntologyUtils.saveOntology(generatedOntology);
+			ontologyUtils.checkOntology(generatedOntology);
+			//OntologyReader checkOntologyReader = ontologyUtils.checkOwlReader();
+			utils.saveOntology(generatedOntology);
 			return ok("ok");
 		} catch (Exception e) {
 			e.printStackTrace();

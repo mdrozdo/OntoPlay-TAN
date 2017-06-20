@@ -1,7 +1,15 @@
 package ontoplay.models.owlGeneration;
 
-
 import java.util.List;
+
+import ontoplay.OntoplayConfig;
+import ontoplay.models.ClassCondition;
+import ontoplay.models.ClassRelation;
+import ontoplay.models.ConfigurationException;
+
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.stream.Collectors;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.OWLXMLOntologyFormat;
@@ -15,22 +23,37 @@ import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLImportsDeclaration;
+import org.semanticweb.owlapi.model.OWLNamedIndividual;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
+import org.semanticweb.owlapi.util.OWLEntityRemover;
 
-import ontoplay.models.ClassCondition;
-import ontoplay.models.ConfigurationException;
-import ontoplay.models.OntologyUtils;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
+@Singleton
 public class OntologyGenerator {
-	private static OntologyGenerator instance;
-	private static OWLDataFactory factory;
-	private static OWLOntologyManager manager;
-
-	private final ClassRestrictionGenerator classRestrictionGenerator;
+	private OWLDataFactory factory;
+	private OWLOntologyManager manager;
+	
+	private ClassRestrictionGenerator classRestrictionGenerator;
 	private IndividualGenerator individualGenerator;
+	private OntoplayConfig config;
+
+	@Inject
+	public OntologyGenerator(ClassRestrictionGeneratorFactory classGenFactory, IndividualGeneratorFactory individualGenFactory, OntoplayConfig config){
+		this.config = config;
+		//Should these be injected?
+		manager = OWLManager.createOWLOntologyManager();
+		factory = manager.getOWLDataFactory();
+
+		//Should these be created from a Guice factory?
+		classRestrictionGenerator = classGenFactory.create(factory);
+		individualGenerator = individualGenFactory.create(factory);
+	}
+
 
 	public ClassRestrictionGenerator getClassRestrictionGenerator() {
 		return classRestrictionGenerator;
@@ -40,47 +63,33 @@ public class OntologyGenerator {
 		return individualGenerator;
 	}
 
-	public static void setGlobalInstance(OntologyGenerator kb) {
-		instance = kb;
-	}
-
-	public static OntologyGenerator getGlobalInstance() {
-		return instance;
-	}
-
-	public static OWLDataFactory getOwlApiFactory() {
+	public OWLDataFactory getOwlApiFactory(){
 		return factory;
-	}
-
-	public static void initialize(String uri, String localOntologyFolder) {
-		setGlobalInstance(loadFromFile(uri, localOntologyFolder));
-	}
-
-	public static OntologyGenerator loadFromFile(String uri, String localOntologyFolder) {
-		manager = OWLManager.createOWLOntologyManager();
-		factory = manager.getOWLDataFactory();
-
-		return new OntologyGenerator();
-	}
-
-	private OntologyGenerator() {
-
-		classRestrictionGenerator = new ClassRestrictionGenerator(factory);
-		individualGenerator = new IndividualGenerator(factory);
 	}
 
 	public OWLOntology convertToOwlClassOntology(String classUri, ClassCondition condition) {
 		OWLOntology destinationOntology;
 		try {
 			IRI classIri = IRI.create(classUri);
-			IRI ontologyIRI = IRI.create(OntologyUtils.getNamespace(classIri));
+			IRI ontologyIRI = IRI.create(getNamespace(classIri));
 			clearManagerFromOntologies(ontologyIRI);
 
 			destinationOntology = manager.createOntology(ontologyIRI);
 
 			OWLClassExpression resultExpression = getClassRestrictionGenerator().convertToOntClass(classUri, condition);
 
-			addToOntologyAsClass(destinationOntology, resultExpression, classUri);
+			if(condition.getClassRelation() == ClassRelation.EQUIVALENT) {
+                addToOntologyAsClass(destinationOntology, resultExpression, classUri);
+            } else if(condition.getClassRelation() == ClassRelation.SUBCLASS){
+			    addToOntologyAsSubclass(destinationOntology, resultExpression, classUri);
+            } else {
+            	throw new UnsupportedOperationException("Unknown class relation: " + condition.getClassRelation());
+			}
+
+			List<OWLAxiom> axioms = destinationOntology.axioms().collect(Collectors.toList());
+
+			addImportDeclarations(destinationOntology, axioms);
+
 			return destinationOntology;
 
 		} catch (OWLOntologyCreationException e) {
@@ -108,7 +117,7 @@ public class OntologyGenerator {
 		OWLOntology destinationOntology;
 		try {
 			IRI iri = IRI.create(individualUri);
-			IRI ontologyIRI = IRI.create(OntologyUtils.getNamespace(iri));
+			IRI ontologyIRI = IRI.create(getNamespace(iri));
 			clearManagerFromOntologies(ontologyIRI);
 			destinationOntology = manager.createOntology(ontologyIRI);
 
@@ -143,11 +152,11 @@ public class OntologyGenerator {
 		for (OWLAxiom axiom : axioms) {
 			for (OWLEntity ent : axiom.getSignature()) {
 
-				IRI ontoIRI = IRI.create(OntologyUtils.getNamespace(ent.getIRI()));
+				IRI ontoIRI = IRI.create(getNamespace(ent.getIRI()));
 
 				OWLImportsDeclaration importsDeclaration = factory.getOWLImportsDeclaration(ontoIRI);
 				if (!ontoIRI.toString().contains("XMLSchema")
-						&& !destinationOntology.getOntologyID().getOntologyIRI().equals(ontoIRI)
+						&& !destinationOntology.getOntologyID().getOntologyIRI().get().equals(ontoIRI)
 						&& !destinationOntology.getImportsDeclarations().contains(importsDeclaration)) {
 					AddImport addImportChange = new AddImport(destinationOntology, importsDeclaration);
 					manager.applyChange(addImportChange);
@@ -169,6 +178,23 @@ public class OntologyGenerator {
 		OWLAxiom equivalentClassAxiom = 
 				factory.getOWLEquivalentClassesAxiom(resultClass, resultExpression);
 		manager.addAxiom(destinationOntology, equivalentClassAxiom);
+	}
+
+	private void addToOntologyAsSubclass(OWLOntology destinationOntology, OWLClassExpression resultExpression,
+									  String conditionUri) {
+		OWLClass resultClass = factory.getOWLClass(IRI.create(conditionUri));
+
+		OWLAxiom subClassOfAxiom =
+				factory.getOWLSubClassOfAxiom(resultClass, resultExpression);
+		manager.addAxiom(destinationOntology, subClassOfAxiom);
+	}
+
+	private String getNamespace(IRI iri){
+		String namespace = iri.getNamespace();
+		if(namespace.endsWith("#") || namespace.endsWith("/")){
+			namespace = namespace.substring(0, namespace.length()-1);
+		}
+		return namespace;
 	}
 
 	private String serializeToString(OWLOntology destinationOntology) throws OWLOntologyStorageException {
@@ -201,6 +227,25 @@ public class OntologyGenerator {
 			if (managerOwlOntology.getOntologyID().getOntologyIRI().equals(ontologyIRI)) {
 				manager.removeOntology(managerOwlOntology);
 			}
+		}
+	}
+	
+	public boolean removeIndividual(String individualUri){
+		OWLNamedIndividual individual=factory.getOWLNamedIndividual(IRI.create(individualUri));
+		if(individual == null)
+			return false;
+		OWLEntityRemover remover = new OWLEntityRemover(manager.ontologies());
+		individual.accept(remover);
+		manager.applyChanges(remover.getChanges());	
+		OutputStream out;
+		try {
+			out = new FileOutputStream(config.getOntologyFilePath());
+	
+		manager.saveOntology(manager.getOntology(IRI.create(config.getOntologyNamespace())), out);
+		out.close();
+		return false;
+		} catch (Exception e) {
+			return false;
 		}
 	}
 

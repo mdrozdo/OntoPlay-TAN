@@ -4,37 +4,48 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+import ontoplay.OntoplayConfig;
+import ontoplay.controllers.MainTemplate;
 import org.apache.commons.io.FileUtils;
 
-import ontoplay.controllers.OntologyController;
-import ontoplay.controllers.configuration.utils.OntoplayOntologyUtils;
-import ontoplay.controllers.utils.OntologyUtils;
-import ontoplay.controllers.utils.PathesUtils;
-import ontoplay.jobs.JenaOwlReaderConfiguration;
-import ontoplay.jobs.OntologyGeneratorConfiguration;
-import ontoplay.jobs.PropertyTypeConfiguration;
-import ontoplay.models.ontologyReading.jena.JenaOwlReaderConfig;
 import play.mvc.Controller;
 import play.mvc.Http.MultipartFormData;
 import play.mvc.Http.MultipartFormData.FilePart;
 import play.mvc.Result;
 
+import javax.inject.Inject;
+
 public class UploadController extends Controller {
-	public static Result showUploadPage() {
-		return ok(ontoplay.views.html.configuration.upload.render(OntologyUtils.ontologyName,OntologyUtils.iriString));
+
+	private OntoplayConfig config;
+	private MainTemplate mainTemplate;
+
+	@Inject
+	public UploadController(OntoplayConfig config, MainTemplate mainTemplate){
+		this.config = config;
+		this.mainTemplate = mainTemplate;
 	}
 
-	public static Result upload() {
+	/**
+	 * To replace the current annotation configuration with the original (empty and structured) one
+	 */
+
+	public Result showUploadPage() {
+
+		return ok(ontoplay.views.html.configuration.upload.render(config.getOntologyFileName(), config.getOntologyNamespace(),
+				mainTemplate.getRenderFunction()));
+	}
+
+	public Result upload() {
 		MultipartFormData body = request().body().asMultipartFormData();
 		FilePart<File> ontologyFile = body.getFile("ontologyFile");
 		String result = "";
 		if (ontologyFile != null) {
 			result += "file Name " + ontologyFile.getFilename()+"\n";
 			result += "contentType " + ontologyFile.getContentType()+"\n";
-		
-			//File file = ontologyFile.getFile();
+
 			File file = ontologyFile.getFile();
-		    File destination = new File(PathesUtils.UPLOADS_PATH, ontologyFile.getFilename());
+		    File destination = new File(config.getUploadsPath(), ontologyFile.getFilename());
 		    destination.delete();
 		    try {
 				FileUtils.moveFile(file, destination);
@@ -47,16 +58,33 @@ public class UploadController extends Controller {
 		      Map<String,String[]> dataPart = request().body().asMultipartFormData().asFormUrlEncoded();
 	          String uri = dataPart.get("ontologyIRI")[0];
 
-			OntoplayOntologyUtils.setOntologyInTheXml(ontologyFile.getFilename(),uri);
-			OntoplayOntologyUtils.setOntologyCF();
-			OntoplayOntologyUtils.resetAnnotationCF();
-				new JenaOwlReaderConfiguration().initialize(OntologyUtils.file,new JenaOwlReaderConfig().useLocalMapping(OntologyUtils.iriString,OntologyUtils.fileName));
-				OntologyController.setObjects();
+			try {
+				config.updateOntologyConfig(ontologyFile.getFilename(), uri);
+			} catch (IOException e) {
+				e.printStackTrace();
+				return internalServerError("Error updating configuration.");
+			}
+
+			resetAnnotationCF();
+			//TODO: What to do with the below code? Check if works as it is.
+				//new JenaOwlReaderConfiguration().initialize(OntologyUtils.file,new JenaOwlReaderConfig().useLocalMapping(OntologyUtils.iriString,OntologyUtils.fileName));
+				//OntologyController.setObjects();
 			return ok("File uploaded \n "+result+"\n URI "+uri);
-			
+
 		} else {
 			flash("error", "Missing file");
 			return ok("Error");
 		}
+	}
+
+	private void resetAnnotationCF() {
+		File original=new File(config.getOriginalAnnotationsFilePath());
+		File currentFile =new File(config.getAnnotationsFilePath());
+		 try {
+			 currentFile.delete();
+				FileUtils.copyFile(original, currentFile);
+			} catch (IOException e) {
+				System.out.println("Error replacing Annotation file "+e.toString());
+			}
 	}
 }

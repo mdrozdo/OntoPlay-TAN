@@ -5,11 +5,14 @@ import java.util.List;
 
 import com.google.gson.GsonBuilder;
 
+import ontoplay.controllers.utils.OntologyUtils;
 import ontoplay.controllers.OntologyController;
 import ontoplay.models.angular.PropertyDTO;
 import ontoplay.models.ontologyModel.OntoClass;
 import ontoplay.models.ontologyModel.OntoProperty;
 import play.mvc.Result;
+
+import javax.inject.Inject;
 
 /**
  * 
@@ -19,9 +22,14 @@ import play.mvc.Result;
 
 public class Properties extends OntologyController {
 
-	public static Result getPropertiesByClassName(String className) {
+	@Inject
+	public Properties(OntologyUtils ontoHelper) {
+		super(ontoHelper);
+	}
+
+	public Result getPropertiesByClassName(String className) {
 		try {
-			OntoClass owlClass = getOwlClass(className);
+			OntoClass owlClass = ontologyUtils.getOwlClass(className);
 			List<OntoProperty> properties = owlClass.getProperties();
 			List<PropertyDTO> propertiesDTO = new ArrayList<PropertyDTO>();
 

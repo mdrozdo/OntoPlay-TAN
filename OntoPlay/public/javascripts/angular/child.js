@@ -14,7 +14,7 @@
 			closeDialog();
 		
         	if($scope.data.property!='off'){
-        		Services.getOperators(encodeURIComponent($scope.data.property),Services.isAddIndividual()).then(function(data){
+        		Services.getOperators(encodeURIComponent($scope.data.property),$scope.isAddIndividual).then(function(data){
 					$scope.operators=data.operators;
 					$scope.data.inputType=data.inputType;
 					},onError);
@@ -62,10 +62,28 @@
         	alert('error');
         }
         
-        $scope.$watch('className',function(oldValue,newValue){
-        	
-        	if(newValue!=null)
-				Services.getProperties(newValue).then(function(data){$scope.properties=data;},onError);
+        $scope.$watch('className',function(newValue, oldValue){
+        	$scope.propertyIndividuals=[];
+        	if(newValue!=null){
+				Services.getProperties(encodeURIComponent(newValue)).then(function(data){$scope.properties=data;},onError);
+				//Incase of update
+				if($scope.data.operator!='off'){
+					Services.getOperators(encodeURIComponent($scope.data.property),$scope.isAddIndividual).then(function(data){
+					$scope.operators=data.operators;
+					},onError);				
+				}
+				
+				if($scope.data.propertyClass!='off'){
+				Services.getClasses(encodeURIComponent($scope.data.property)).then(function(data){				
+					$scope.propertyClasses=data;
+				},onError);
+				}
+				
+				if($scope.data.objectValue!="off"){			
+				Services.getIndividuals($scope.data.propertyClass).then(function(data){$scope.propertyIndividuals=data;});
+				}
+			}
+				
         });
 		
 			var reset=function(hideOperator,hideDataValue,hideClasses,hideSubNodes){
@@ -88,7 +106,7 @@
 				$scope.data.nodes=[];
 				$scope.data.objectAnnotations=[];
 			}
-			
+
 		}
 			
 			$scope.openAnnotationProperties=function(){
