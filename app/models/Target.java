@@ -5,8 +5,8 @@ import java.util.HashMap;
 
 import play.Logger.ALogger;
 
-import com.hp.hpl.jena.query.QuerySolution;
-import com.hp.hpl.jena.query.ResultSet;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
 
 public class Target {
 

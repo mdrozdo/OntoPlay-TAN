@@ -1,21 +1,17 @@
 package models;
 
+import ontoplay.models.ontologyReading.OntologyReader;
+import org.apache.jena.ontology.Individual;
+import org.apache.jena.ontology.OntClass;
+import org.apache.jena.ontology.OntProperty;
+import org.apache.jena.rdf.model.Literal;
+import org.apache.jena.rdf.model.NodeIterator;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.util.iterator.ExtendedIterator;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import ontoplay.models.ontologyReading.OntologyReader;
-
-import org.apache.commons.lang.NullArgumentException;
-
-import com.hp.hpl.jena.ontology.Individual;
-import com.hp.hpl.jena.ontology.OntClass;
-import com.hp.hpl.jena.ontology.OntProperty;
-import com.hp.hpl.jena.rdf.model.Literal;
-import com.hp.hpl.jena.rdf.model.NodeIterator;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
-import com.hp.hpl.jena.util.iterator.ExtendedIterator;
-
-import play.*;
 
 public class IndividualViewModel {
 
@@ -70,7 +66,7 @@ public class IndividualViewModel {
 		public IndividualViewModel(Individual individual)
 		{
 			if(individual == null)
-				throw new NullArgumentException("inidividual");
+				throw new IllegalArgumentException("inidividual");
 			this.individual = individual;
 			this.ontClass = individual.getOntClass();
 			Initialize();
