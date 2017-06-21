@@ -1,6 +1,10 @@
 import com.google.inject.AbstractModule;
 import java.time.Clock;
 
+import ontoplay.controllers.MainTemplate;
+import ontoplay.controllers.OntoPlayMainTemplate;
+import play.Configuration;
+import play.Environment;
 import services.ApplicationTimer;
 import services.AtomicCounter;
 import services.Counter;
@@ -17,6 +21,15 @@ import services.Counter;
  */
 public class Module extends AbstractModule {
 
+    private Environment environment;
+    private Configuration configuration;
+
+    public Module(Environment environment, Configuration configuration){
+
+        this.environment = environment;
+        this.configuration = configuration;
+    }
+
     @Override
     public void configure() {
         // Use the system clock as the default implementation of Clock
@@ -26,7 +39,10 @@ public class Module extends AbstractModule {
         bind(ApplicationTimer.class).asEagerSingleton();
         // Set AtomicCounter as the implementation for Counter.
         bind(Counter.class).to(AtomicCounter.class);
-        requestStaticInjection(ontoplay.controllers.Assets.class);
+        //requestStaticInjection(ontoplay.controllers.Assets.class);
+        install(new ontoplay.Module(new play.Environment(environment.underlying()), new play.Configuration(configuration.underlying())));
+        bind(MainTemplate.class).to(OntoPlayMainTemplate.class);
+
     }
 
 }

@@ -12,7 +12,7 @@ lazy val root = (project in file("."))
 
 scalaVersion := "2.11.7"
 
-routesGenerator := StaticRoutesGenerator
+//routesGenerator := StaticRoutesGenerator
 
 libraryDependencies ++= Seq(
   javaJdbc,

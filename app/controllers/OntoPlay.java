@@ -6,6 +6,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import ontoplay.OntoplayConfig;
 import ontoplay.models.ClassCondition;
 import ontoplay.models.ConditionDeserializer;
 import ontoplay.models.ontologyModel.OntoClass;
@@ -13,6 +15,7 @@ import ontoplay.models.ontologyModel.OwlIndividual;
 import ontoplay.models.ontologyReading.OntologyReader;
 import models.IndividualViewModel;
 import models.Target;
+import ontoplay.models.owlGeneration.OntologyGenerator;
 import play.mvc.Result;
 import play.mvc.Results;
 
@@ -32,10 +35,27 @@ import play.Routes;
 import ontoplay.controllers.OntologyController;
 import ontoplay.controllers.utils.OntologyUtils;
 
+import javax.inject.Inject;
+
 //TODO: This should generate individual describing the configuration, instead of constraints
 public class OntoPlay extends OntologyController {
 
-	public static Result javascriptRoutes()
+	private OntologyUtils ontologyUtils;
+	private OntologyReader ontologyReader;
+	private OntoplayConfig config;
+	private OntologyGenerator ontologyGenerator;
+
+	@Inject
+	public OntoPlay(OntologyUtils ontologyUtils, OntologyReader ontologyReader, OntoplayConfig config, OntologyGenerator ontologyGenerator){
+		super(ontologyUtils);
+
+		this.ontologyUtils = ontologyUtils;
+		this.ontologyReader = ontologyReader;
+		this.config = config;
+		this.ontologyGenerator = ontologyGenerator;
+	}
+
+	public Result javascriptRoutes()
     {
         response().setContentType("text/javascript");
         return ok(
@@ -47,17 +67,17 @@ public class OntoPlay extends OntologyController {
 		        //controllers.routes.javascript.Application.getValueCondition(),
         ));
     }
-	public static Result sendOffer(String targetURI, String offerURI)
+	public Result sendOffer(String targetURI, String offerURI)
 	{
 		try
 		{
 		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-		File file = new File(OntologyUtils.fileName);
+		File file = new File(config.getOntologyFilePath());
 		OWLOntology ont = manager.loadOntologyFromOntologyDocument(file);
 		file =null;
 		OWLDataFactory factory = manager.getOWLDataFactory();
-		OwlIndividual offerInd = OntologyReader.getGlobalInstance().getIndividual(OntologyUtils.nameSpace + offerURI);
-		OwlIndividual targetInd = OntologyReader.getGlobalInstance().getIndividual(OntologyUtils.nameSpace + targetURI);
+		OwlIndividual offerInd = ontologyReader.getIndividual(offerURI);
+		OwlIndividual targetInd = ontologyReader.getIndividual(targetURI);
 		if (offerInd == null || offerInd.getIndividual() == null || targetInd == null || targetInd.getIndividual() == null ) {
 			return ok("Individual Not Found");
 		}
@@ -72,20 +92,20 @@ public class OntoPlay extends OntologyController {
 		}
 	}
 	
-	private static void SendOffer(OwlIndividual targetInd,
+	private void SendOffer(OwlIndividual targetInd,
 			OwlIndividual offerInd, OWLDataFactory df, OWLOntology o, OWLOntologyManager m) {
 		
 		try
 		{
 			OWLNamedIndividual targetOWL = df.getOWLNamedIndividual(IRI.create(targetInd.getUri()));
-			OWLDataProperty prop = df.getOWLDataProperty(IRI.create(OntologyUtils.nameSpace + "isOfferSent"));
+			OWLDataProperty prop = df.getOWLDataProperty(IRI.create(config.getOntologyNamespace() + "isOfferSent"));
 			if(prop == null)
 				return;
 			OWLAxiom assertion = df.getOWLDataPropertyAssertionAxiom(prop, targetOWL, true);
 			
 			AddAxiom addAxiomChange = new AddAxiom(o, assertion);
 			m.applyChange(addAxiomChange);
-			OutputStream out =  new FileOutputStream(OntologyUtils.fileName);
+			OutputStream out =  new FileOutputStream(config.getOntologyFilePath());
 			m.saveOntology(o, out);
 			out.close();
 		}
@@ -93,23 +113,23 @@ public class OntoPlay extends OntologyController {
 
 	}
 
-	public static Result remove(String individualUri, String className ) {
+	public Result remove(String individualUri, String className ) {
 		try {
 			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-			File file = new File(OntologyUtils.fileName);
+			File file = new File(config.getOntologyFilePath());
 			OWLOntology ont = manager.loadOntologyFromOntologyDocument(file);
 			file =null;
 			OWLDataFactory factory = manager.getOWLDataFactory();
-			OWLNamedIndividual individual=factory.getOWLNamedIndividual(IRI.create( OntologyUtils.nameSpace + individualUri));
+			OWLNamedIndividual individual=factory.getOWLNamedIndividual(IRI.create( config.getOntologyNamespace() + individualUri));
 			
 			
 			
 			if(individual == null)
 				return Results.redirect("/view/" + className);
-			OWLEntityRemover remover = new OWLEntityRemover(manager, Collections.singleton(ont));
+			OWLEntityRemover remover = new OWLEntityRemover(ont);
 			individual.accept(remover);
 			manager.applyChanges(remover.getChanges());
-			OutputStream out =  new FileOutputStream(OntologyUtils.fileName);
+			OutputStream out =  new FileOutputStream(config.getOntologyFilePath());
 			manager.saveOntology(ont, out);
 			out.close();
 			return Results.redirect("/view/" + className);
@@ -120,23 +140,22 @@ public class OntoPlay extends OntologyController {
 		
 	}
 	
-	public static Result view(String className) {
+	public Result view(String className) {
 		
 		//new JenaOwlReaderConfiguration().initialize(TANHelper.file,new JenaOwlReaderConfig().useLocalMapping(TANHelper.iriString,TANHelper.fileName));
 		//Default class Name
 		if (className == null)
 			className = "http://www.w3.org/2002/07/owl#Thing";
-		OntoClass owlClass = getOwlClass(className);
+		OntoClass owlClass = ontologyReader.getOwlClass(className);
 		if (owlClass == null) {
 			return ok("Class Not Found");
 		}
 
-		List<OwlIndividual> individuals = OntologyReader.getGlobalInstance()
-				.getIndividuals(owlClass);
+		List<OwlIndividual> individuals = ontologyReader.getIndividuals(owlClass);
 		return ok(views.html.tan.tableView.render(owlClass,(ArrayList<OwlIndividual>) individuals));
 	}
 	
-	public static Result individual(String individualName) {
+	public Result individual(String individualName) {
 		
 		try
 		{
@@ -145,10 +164,10 @@ public class OntoPlay extends OntologyController {
 			
 			
 			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-			File file = new File(OntologyUtils.fileName);
+			File file = new File(config.getOntologyFilePath());
 			OWLOntology ont = manager.loadOntologyFromOntologyDocument(file);
 			
-			OwlIndividual individual = OntologyReader.getGlobalInstance().getIndividual(OntologyUtils.nameSpace + individualName);
+			OwlIndividual individual = ontologyReader.getIndividual(individualName);
 			if (individual == null || individual.getIndividual() == null) {
 				return ok("Individual Not Found");
 			}
@@ -169,15 +188,15 @@ public class OntoPlay extends OntologyController {
 
 
 
-	public static Result add(String conditionJson, String individualName) {
+	public Result add(String conditionJson, String individualName) {
 		try {
 			ClassCondition condition = ConditionDeserializer.deserializeCondition(ontologyReader, conditionJson);
 			if(3>2)
 				return ok("hello");
-			OWLOntology generatedOntology = ontologyGenerator.convertToOwlIndividualOntology(OntologyUtils.nameSpace+ individualName, condition);
+			OWLOntology generatedOntology = ontologyGenerator.convertToOwlIndividualOntology(ontologyUtils.joinNamespaceAndName(config.getOntologyNamespace(), individualName), condition);
 
 			try {
-				OwlIndividual individual = ontologyReader.getIndividual(OntologyUtils.nameSpace + individualName);
+				OwlIndividual individual = ontologyReader.getIndividual(ontologyUtils.joinNamespaceAndName(config.getOntologyNamespace(), individualName));
 				if (individual != null)
 					return ok("Indvidual name is already used");
 			} catch (Exception e) {
@@ -186,10 +205,10 @@ public class OntoPlay extends OntologyController {
 			if(generatedOntology == null)
 			return ok("true");
 
-			OntologyUtils.checkOntology(generatedOntology);
-			OntologyReader checkOntologyReader = OntologyUtils.checkOwlReader();
-			OntoClass owlClass = checkOntologyReader.getOwlClass(OntologyUtils.nameSpace + "Offer");
-			OntologyUtils.saveOntology(generatedOntology);
+			ontologyUtils.checkOntology(generatedOntology);
+			OntologyReader checkOntologyReader = ontologyUtils.checkOwlReader();
+			OntoClass owlClass = checkOntologyReader.getOwlClass("Offer");
+			ontologyUtils.saveOntology(generatedOntology);
 			// Fix nested individuals
 
 			return ok("ok");
@@ -199,10 +218,10 @@ public class OntoPlay extends OntologyController {
 		}
 	}
 
-	public static Result show(String individualName) {
+	public Result show(String individualName) {
 		try {
 			OwlIndividual individual = ontologyReader
-					.getIndividual(OntologyUtils.nameSpace + individualName);
+					.getIndividual(individualName);
 			if (individual == null)
 				return ok("No individual found");
 
