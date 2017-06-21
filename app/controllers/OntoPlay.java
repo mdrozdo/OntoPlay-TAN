@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import models.QueryExecuter;
 import ontoplay.OntoplayConfig;
 import ontoplay.models.ClassCondition;
 import ontoplay.models.ConditionDeserializer;
@@ -172,11 +173,11 @@ public class OntoPlay extends OntologyController {
 				return ok("Individual Not Found");
 			}
 			
-			IndividualViewModel ind = new IndividualViewModel(individual.getIndividual());
+			IndividualViewModel ind = new IndividualViewModel(individual.getIndividual(), ontologyReader);
 			
 			if(ind.getClassUri().equalsIgnoreCase("http://www.tan.com#Target"))
 				{
-					Target target = new Target(ind);
+					Target target = new Target(ind, new QueryExecuter(config));
 					return ok(views.html.tan.targetView.render(ind, target));
 				}
 			

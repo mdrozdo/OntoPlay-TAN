@@ -1,5 +1,6 @@
 package models;
 
+import ontoplay.OntoplayConfig;
 import org.apache.jena.ontology.OntModel;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
@@ -13,18 +14,26 @@ import ontoplay.controllers.utils.OntologyUtils;
 
 import java.io.InputStream;
 
-import org.mindswap.pellet.jena.PelletReasonerFactory;
+import openllet.jena.PelletReasonerFactory;
 
 import play.Logger.ALogger;
 
+import javax.inject.Inject;
+
 public class QueryExecuter {
-	
-	static QueryExecuter connection = new QueryExecuter();
-	
+
+	private OntoplayConfig config;
+
+	@Inject
+	public QueryExecuter(OntoplayConfig config){
+
+		this.config = config;
+	}
+
 	OntModel connect() {
 		OntModel mode = null;
 		mode = ModelFactory.createOntologyModel(PelletReasonerFactory.THE_SPEC);
-		InputStream in = FileManager.get().open(OntologyUtils.file); 
+		InputStream in = FileManager.get().open(config.getOntologyFilePath());
 		if (in == null) {
 			throw new IllegalArgumentException("File not found"); 
 		}

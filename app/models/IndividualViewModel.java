@@ -21,8 +21,9 @@ public class IndividualViewModel {
 		
 		private String name;
 		private String description;
-		
-		public String getClassUri()
+	private OntologyReader ontologyReader;
+
+	public String getClassUri()
 		{
 			return ontClass.getURI();
 		}
@@ -63,8 +64,9 @@ public class IndividualViewModel {
 		}
 		
 		
-		public IndividualViewModel(Individual individual)
+		public IndividualViewModel(Individual individual, OntologyReader ontologyReader)
 		{
+			this.ontologyReader = ontologyReader;
 			if(individual == null)
 				throw new IllegalArgumentException("inidividual");
 			this.individual = individual;
@@ -255,7 +257,7 @@ public class IndividualViewModel {
 		}
 		
 		private Resource getResourceFromURI(RDFNode node) {
-			return OntologyReader.getGlobalInstance().getIndividual(node.asResource().getURI()).getIndividual();
+			return ontologyReader.getIndividual(node.asResource().getURI()).getIndividual();
 		}
 		
 		private String getPropertyName(OntProperty prop){

@@ -8,27 +8,31 @@ import play.Logger.ALogger;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 
+import javax.inject.Inject;
+
 public class Target {
 
 	private IndividualViewModel individual;
 	private String targetUri;
-	
+	private QueryExecuter queryExecuter;
+
 	public ArrayList<InterestStatistic> interests = new ArrayList<InterestStatistic>();
 	public HashMap<String,PropertyStatistic> properties = new HashMap<String,PropertyStatistic>();
-	
-	public Target(IndividualViewModel individual)
+
+	@Inject
+	public Target(IndividualViewModel individual, QueryExecuter queryExecuter)
 	{
 		
 		this.individual = individual;
 		this.targetUri = individual.getUri();
+		this.queryExecuter = queryExecuter;
 		Query();
 	}
 	
 	private Double getNumberOfTotalConsumers()
 	{
 		String query = StringConstants.getConsumerCountQuery(this.targetUri);
-		QueryExecuter q = new QueryExecuter();
-		ResultSet result = QueryExecuter.connection.executeQuery(query);
+		ResultSet result = queryExecuter.executeQuery(query);
 		while (result.hasNext()) {
 			
 			QuerySolution row = result.nextSolution();
@@ -54,8 +58,7 @@ public class Target {
 		{
 		Double numberOfTotalConsumers = getNumberOfTotalConsumers();
 		String query = StringConstants.getPropertyQuery(this.targetUri);
-		QueryExecuter q = new QueryExecuter();
-		ResultSet result = QueryExecuter.connection.executeQuery(query);
+		ResultSet result = queryExecuter.executeQuery(query);
 		
 			try
 			{
@@ -101,8 +104,7 @@ public class Target {
 		{
 		Double numberOfTotalConsumers = getNumberOfTotalConsumers();
 		String query = StringConstants.getInterestsQuery(this.targetUri);
-		QueryExecuter q = new QueryExecuter();
-		ResultSet result = QueryExecuter.connection.executeQuery(query);	
+		ResultSet result = queryExecuter.executeQuery(query);
 		
 			try
 			{
