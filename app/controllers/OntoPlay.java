@@ -168,7 +168,7 @@ public class OntoPlay extends OntologyController {
 			File file = new File(config.getOntologyFilePath());
 			OWLOntology ont = manager.loadOntologyFromOntologyDocument(file);
 			
-			OwlIndividual individual = ontologyReader.getIndividual(individualName);
+		 	OwlIndividual individual = ontologyReader.getIndividual(individualName);
 			if (individual == null || individual.getIndividual() == null) {
 				return ok("Individual Not Found");
 			}

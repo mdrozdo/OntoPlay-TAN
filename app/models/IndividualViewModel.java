@@ -70,7 +70,7 @@ public class IndividualViewModel {
 			if(individual == null)
 				throw new IllegalArgumentException("inidividual");
 			this.individual = individual;
-			this.ontClass = individual.getOntClass();
+			this.ontClass = individual.getOntClass(true);
 			Initialize();
 			FixImageProperty();
 			FixThingProperties();
