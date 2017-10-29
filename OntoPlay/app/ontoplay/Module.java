@@ -5,7 +5,6 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
-import com.typesafe.config.ConfigFactory;
 import ontoplay.controllers.*;
 import ontoplay.controllers.configuration.utils.OntoplayAnnotationUtils;
 import ontoplay.models.ontologyReading.OntologyReader;
@@ -23,21 +22,27 @@ import ontoplay.models.propertyConditions.IndividualValueCondition;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import play.Configuration;
 import play.Environment;
+import play.Logger;
+
+import java.io.File;
 
 /**
  * Created by michal on 22.11.2016.
  */
-public class Module extends AbstractModule{
+public class Module extends AbstractModule {
 
     private OntoplayConfig configuration;
 
-    public Module(Environment environment, Configuration configuration){
-        com.typesafe.config.Config ontoPlayConfig = ConfigFactory.parseFile(environment.getFile(configuration.getString("ontoplay.config")));
-        this.configuration = new FileOntoplayConfig(ontoPlayConfig);
+    public Module(Environment environment, Configuration configuration) {
+        File ontoPlayConfigFile = environment.getFile(configuration.getString("ontoplay.config"));
+
+        Logger.info("Loading ontoplay config from: " + ontoPlayConfigFile.getAbsolutePath());
+
+        this.configuration = new FileOntoplayConfig(ontoPlayConfigFile);
 
     }
 
-    public Module(OntoplayConfig config){
+    public Module(OntoplayConfig config) {
         this.configuration = config;
     }
 
@@ -45,10 +50,13 @@ public class Module extends AbstractModule{
     protected void configure() {
         bind(OntologyReader.class).to(JenaOwlReader.class).in(Singleton.class);
 
-        bind(new TypeLiteral<RestrictionFactory<IndividualValueCondition>>(){}).to(IndividualValueRestrictionFactory.class).in(Singleton.class);
-        bind(new TypeLiteral<RestrictionFactory<ClassValueCondition>>(){}).to(ClassValueRestrictionFactory.class);
+        bind(new TypeLiteral<RestrictionFactory<IndividualValueCondition>>() {
+        }).to(IndividualValueRestrictionFactory.class).in(Singleton.class);
+        bind(new TypeLiteral<RestrictionFactory<ClassValueCondition>>() {
+        }).to(ClassValueRestrictionFactory.class);
 
-        bind(new TypeLiteral<PropertyConditionRenderer<OwlObjectProperty>>(){}).to(ObjectPropertyRenderer.class);
+        bind(new TypeLiteral<PropertyConditionRenderer<OwlObjectProperty>>() {
+        }).to(ObjectPropertyRenderer.class);
 
         bind(OntologyReaderFactory.class).to(JenaOntologyReaderFactory.class);
         install(new FactoryModuleBuilder()
@@ -67,11 +75,12 @@ public class Module extends AbstractModule{
     }
 
     @Provides
-    private OntoplayConfig createConfig(){
+    private OntoplayConfig createConfig() {
         return configuration;
     }
 
-    @Provides @Singleton
+    @Provides
+    @Singleton
     private RestrictionFactory<DatatypePropertyCondition> createDatatypeRestrictionFactory(OWLDataFactory factory) throws Exception {
 
         DatatypeRestrictionFactory topLevelFactory = new DatatypeRestrictionFactory();
@@ -91,8 +100,9 @@ public class Module extends AbstractModule{
         return topLevelFactory;
     }
 
-    @Provides @Singleton
-    private OwlPropertyFactory createOwlPropertyFactory(){
+    @Provides
+    @Singleton
+    private OwlPropertyFactory createOwlPropertyFactory() {
         OwlPropertyFactory topLevelFactory = new OwlPropertyFactory();
         topLevelFactory.registerPropertyFactory(new IntegerPropertyFactory());
         topLevelFactory.registerPropertyFactory(new FloatPropertyFactory());
@@ -102,14 +112,15 @@ public class Module extends AbstractModule{
         return topLevelFactory;
     }
 
-    @Provides @Singleton
-    private JenaOwlReader createJenaReader(OwlPropertyFactory owlPropertyFactory){
+    @Provides
+    @Singleton
+    private JenaOwlReader createJenaReader(OwlPropertyFactory owlPropertyFactory) {
         return new JenaOwlReader(owlPropertyFactory, configuration, false);
     }
 
     @Provides
     @Singleton
-    private OntoplayAnnotationUtils createOntoplayAnnotationUtils(){
+    private OntoplayAnnotationUtils createOntoplayAnnotationUtils() {
         String uri = configuration.getAnnotationsFilePath();
         return new OntoplayAnnotationUtils(uri);
     }
@@ -118,7 +129,7 @@ public class Module extends AbstractModule{
     @Provides
     private PropertyConditionRenderer<StringProperty> createStringPropertyRenderer() {
         DatatypePropertyRenderer stringPropertyRenderer = new DatatypePropertyRenderer();
-        stringPropertyRenderer.registerPropertyOperator("equalTo", "is equal to ", true,  new SimpleDatatypePropertyValueRenderer());
+        stringPropertyRenderer.registerPropertyOperator("equalTo", "is equal to ", true, new SimpleDatatypePropertyValueRenderer());
         return stringPropertyRenderer;
     }
 
@@ -151,7 +162,7 @@ public class Module extends AbstractModule{
 
 
     @Provides
-    private OWLDataFactory createDataFactory(OntologyGenerator gen){
+    private OWLDataFactory createDataFactory(OntologyGenerator gen) {
         return gen.getOwlApiFactory();
     }
 
