@@ -1,39 +1,41 @@
 package ontoplay.models.ontologyReading;
 
-import java.util.List;
-import java.util.Set;
-
 import ontoplay.models.ConfigurationException;
 import ontoplay.models.PropertyProvider;
 import ontoplay.models.angular.AnnotationDTO;
 import ontoplay.models.ontologyModel.OntoClass;
 import ontoplay.models.ontologyModel.OntoProperty;
 import ontoplay.models.ontologyModel.OwlIndividual;
+import org.apache.jena.ontology.AnnotationProperty;
+import org.apache.jena.rdf.model.ResIterator;
 
-public abstract class OntologyReader implements PropertyProvider{
-	
-	private static OntologyReader instance;
-	
-	public static void setGlobalInstance(OntologyReader reader) {
-		instance = reader;
-	}
+import java.util.List;
+import java.util.Set;
 
-	public static OntologyReader getGlobalInstance() {
-		return instance;
-	}
-	
-	public abstract OntoClass getOwlClass(String className);
+public interface OntologyReader extends PropertyProvider {
 
-	@Override
-	public abstract OntoProperty getProperty(String propertyUri) throws ConfigurationException;
+    OntoClass getOwlClass(String className);
 
-	public abstract List<OwlIndividual> getIndividualsInRange(OntoClass owlClass, OntoProperty property);
+    @Override
+    OntoProperty getProperty(String propertyUri) throws ConfigurationException;
 
-	public abstract List<OntoClass> getClassesInRange( OntoProperty property);
-	
-	public abstract List<OwlIndividual> getIndividuals(OntoClass owlClass);
-	
-	public abstract OwlIndividual getIndividual(String name);
-	public abstract Set<AnnotationDTO> getAnnotations(boolean isFromNameSpace);
+    List<OwlIndividual> getIndividualsInRange(OntoClass owlClass, OntoProperty property);
 
+    List<OntoClass> getClassesInRange(OntoProperty property);
+
+    List<OwlIndividual> getIndividuals(OntoClass owlClass);
+
+    OwlIndividual getIndividual(String name);
+
+    Set<AnnotationDTO> getAnnotations(boolean isFromNameSpace);
+
+    Set<AnnotationProperty> getAnnotations();
+
+    ResIterator getAnnotationsAxioms();
+
+    String getOntologyNamespace();
+
+    List<OntoClass> getClasses();
+
+    void refreshModel();
 }

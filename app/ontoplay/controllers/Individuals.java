@@ -1,74 +1,48 @@
 package ontoplay.controllers;
 
-import java.util.Map;
-
-import ontoplay.OntologyHelper;
-import ontoplay.jobs.JenaOwlReaderConfiguration;
+import ontoplay.controllers.utils.OntologyUtils;
 import ontoplay.models.ConfigurationException;
 import ontoplay.models.ontologyModel.OntoClass;
 import ontoplay.models.ontologyModel.OntoProperty;
-import ontoplay.models.ontologyReading.jena.JenaOwlReaderConfig;
-import play.mvc.*;
+import ontoplay.models.owlGeneration.PropertyConditionRendererProvider;
+import play.mvc.Result;
+
+import javax.inject.Inject;
+import java.util.Map;
 
 public class Individuals extends OntologyController {
 
-	private static int maxConditionId = 1;
+    private static int maxConditionId = 1;
+    private PropertyConditionRendererProvider conditionRendererProvider;
 
-	//TODO: Is this method used?
-	// public static void individual(int conditionId, String classUri) {
-	// 	OntoClass owlClass = getOntologyReader().getOwlClass(classUri);
-	// 	maxConditionId++;
-	// 	int newConditionId = maxConditionId;
-	// 	//TODO: render(newConditionId, owlClass);
-	// }
+    @Inject
+    public Individuals(OntologyUtils ontologyUtils, PropertyConditionRendererProvider conditionRendererProvider) {
+        super(ontologyUtils);
+        this.conditionRendererProvider = conditionRendererProvider;
+    }
 
-	public static Result getPropertyCondition(int conditionId, String classUri,
-			String propertyUri) throws ConfigurationException {
-		new JenaOwlReaderConfiguration().initialize(OntologyHelper.file,new JenaOwlReaderConfig().useLocalMapping(OntologyHelper.iriString,OntologyHelper.fileName));
-		OntoClass owlClass = ontologyReader.getOwlClass(classUri);
-		
-		
-		OntoProperty property = ontologyReader.getProperty(propertyUri);
-		
-		//from here I can know the property type (data,object,string ,date);
-		PropertyConditionRenderer conditionRenderer = PropertyConditionRenderer
-				.getRenderer(property.getClass());
-		
-		
-		final HtmlHolder holder = new HtmlHolder();
-		conditionRenderer.renderProperty(conditionId, owlClass, property, true,
-				new Renderer() {
+    public Result getPropertyCondition(int conditionId, String classUri,
+                                       String propertyUri) throws ConfigurationException {
 
-					@Override
-					public void renderTemplate(String templateName,
-							Map<String, Object> args) {
-						holder.value = renderTemplateByName(templateName, args.values().toArray());						
-					}
-				});
-		return ok(holder.value);
-	}
+        OntoClass owlClass = ontologyUtils.getOwlClass(classUri);
 
-	//TODO: Is this method used?
-// 	public static void getValueCondition(int conditionId, String classUri,
-// 			String propertyUri, String operator) throws ConfigurationException {
-// 		OntoClass owlClass = getOntologyReader().getOwlClass(classUri);
-// 		OntoProperty property = getOntologyReader().getProperty(propertyUri);
-		
-// 		PropertyConditionRenderer conditionRenderer = PropertyConditionRenderer
-// 				.getRenderer(property.getClass());
-		
-// 		conditionRenderer.renderOperator(conditionId, owlClass, property, operator, 
-// 				new Renderer() {
+        OntoProperty property = ontologyUtils.getProperty(propertyUri);
 
-// 					public void renderTemplate(String templateName,
-// 							Map<String, Object> args) {
-// 						//TODO: Individuals.renderTemplate(templateName, args);
-
-// 					}
-// 				});
+        //from here I can know the property type (data,object,string ,date);
+        PropertyConditionRenderer conditionRenderer = conditionRendererProvider
+                .getRenderer(property);
 
 
-// //		renderText(String.format("%d; %s; %s; %s", conditionId, classUri,
-// //				propertyUri, operator));
-// 	}
+        final HtmlHolder holder = new HtmlHolder();
+        conditionRenderer.renderProperty(conditionId, owlClass, property, true,
+                new Renderer() {
+
+                    @Override
+                    public void renderTemplate(String templateName,
+                                               Map<String, Object> args) {
+                        holder.value = renderTemplateByName(templateName, args.values().toArray());
+                    }
+                });
+        return ok(holder.value);
+    }
 }

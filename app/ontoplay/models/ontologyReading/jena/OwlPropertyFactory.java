@@ -1,28 +1,33 @@
 package ontoplay.models.ontologyReading.jena;
 
+import ontoplay.models.ontologyModel.OntoProperty;
+import org.apache.jena.ontology.OntProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import com.hp.hpl.jena.ontology.OntProperty;
+public class OwlPropertyFactory {
+    private List<OwlPropertyFactory> factories = new ArrayList<OwlPropertyFactory>();
 
-import ontoplay.models.InvalidConfigurationException;
-import ontoplay.models.ontologyModel.OntoProperty;
+    public void registerPropertyFactory(
+            OwlPropertyFactory datatypePropertyFactory) {
+        factories.add(datatypePropertyFactory);
+    }
 
-public abstract class OwlPropertyFactory {
-	private static List<OwlPropertyFactory> factories = new ArrayList<OwlPropertyFactory>();
-	public static void registerPropertyFactory(
-			OwlPropertyFactory datatypePropertyFactory) {
-		factories.add(datatypePropertyFactory);		
-	}
-	
-	public static OntoProperty createOwlProperty(OntProperty ontProperty){
-		for(OwlPropertyFactory fact : factories){
-			if(fact.canCreateProperty(ontProperty))
-				return fact.createProperty(ontProperty);
-		}
-			return null;
-	}
-	
-	public abstract boolean canCreateProperty(OntProperty ontProperty);
-	public abstract OntoProperty createProperty(OntProperty ontProperty);	
+    public boolean canCreateProperty(OntProperty ontProperty) {
+        for (OwlPropertyFactory fact : factories) {
+            if (fact.canCreateProperty(ontProperty)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public OntoProperty createProperty(OntProperty ontProperty) {
+        for (OwlPropertyFactory fact : factories) {
+            if (fact.canCreateProperty(ontProperty))
+                return fact.createProperty(ontProperty);
+        }
+        return null;
+    }
 }
